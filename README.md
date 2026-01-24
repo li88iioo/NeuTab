@@ -31,7 +31,7 @@
 ### 🔍 Smart Search
 - **Multi-Engine Support**: Built-in Google, Bing, and GitHub engines.
 - **Custom Engines**: Add your own search engines with custom URL templates.
-- **Smart Suggestions**: Real-time search suggestions from your **Bookmarks** and **Browsing History**.
+- **Smart Suggestions**: Real-time search suggestions from your **Bookmarks** and **Quick Launch Apps**.
 - **Privacy First**: All suggestions are processed locally.
 
 ### 🚀 Quick Launch
@@ -173,7 +173,7 @@ NeuTab/
 ### 🔍 智能搜索
 - **多引擎支持**：内置 Google、Bing、GitHub 搜索。
 - **自定义引擎**：支持添加任意自定义搜索引擎（支持 URL 模板）。
-- **智能建议**：实时匹配您的 **浏览器书签** 和 **历史记录**，无需离开新标签页即可快速跳转。
+- **智能建议**：实时匹配您的 **浏览器书签** 和 **快捷启动应用**，无需离开新标签页即可快速跳转。
 - **隐私保护**：所有建议均在本地处理，不上传任何数据。
 
 ### 🚀 快速启动 (Quick Launch)
