@@ -5,6 +5,7 @@ import IconPreview from "./IconPreview"
 import type { IconStyle } from "~types/quickLaunch"
 import { DEFAULT_SETTINGS } from "~utils/settings"
 import { getTranslations, type Language } from "~utils/i18n"
+import { lockBodyScroll } from "~utils/scrollLock"
 import { sanitizeInternalUrl, sanitizeName, sanitizeUrl } from "~utils/validation"
 
 /**
@@ -88,16 +89,9 @@ const ShortcutModal = ({
      * @description 为了沉浸式体验及兼容移动端滚动，模态框开启时应禁用 Body 滚动。
      */
     useEffect(() => {
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-        const prevOverflow = document.body.style.overflow
-        const prevPaddingRight = document.body.style.paddingRight
-
         previousFocusRef.current = document.activeElement as HTMLElement
 
-        document.body.style.overflow = "hidden"
-        if (scrollbarWidth > 0) {
-            document.body.style.paddingRight = `${scrollbarWidth}px`
-        }
+        const unlockScroll = lockBodyScroll()
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
@@ -158,8 +152,7 @@ const ShortcutModal = ({
 
         return () => {
             document.removeEventListener("keydown", handleKeyDown)
-            document.body.style.overflow = prevOverflow
-            document.body.style.paddingRight = prevPaddingRight
+            unlockScroll()
             previousFocusRef.current?.focus?.()
         }
     }, [onCancel])

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 import { useStorage } from "@plasmohq/storage/hook"
 import { DEFAULT_SETTINGS } from "~utils/settings"
 import { getTranslations, type Language } from "~utils/i18n"
+import { lockBodyScroll } from "~utils/scrollLock"
 
 /**
  * EngineModal 组件属性
@@ -47,9 +48,8 @@ const EngineModal = ({
   // Render into <body> so `position: fixed` is not affected by any ancestor layout/transform,
   // which can cause the dialog to appear "off-screen" when the page becomes very tall on mobile.
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow
     previousFocusRef.current = document.activeElement as HTMLElement
-    document.body.style.overflow = "hidden"
+    const unlockScroll = lockBodyScroll()
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -105,7 +105,7 @@ const EngineModal = ({
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown)
-      document.body.style.overflow = prevOverflow
+      unlockScroll()
       previousFocusRef.current?.focus?.()
     }
   }, [onCancel])

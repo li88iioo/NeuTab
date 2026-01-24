@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS } from "~utils/settings"
 import { getTranslations, type Language } from "~utils/i18n"
 import { getBrowserFaviconUrl } from "~utils/favicon"
 import { logger } from "~utils/logger"
+import { ensureChromePermission } from "~utils/permissions"
 import type { QuickLaunchGroup, QuickLaunchApp } from "~types/quickLaunch"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeUrl } from "~utils/validation"
 import "./SearchBar.css"
@@ -214,15 +215,16 @@ const SearchBarInner = () => {
     }
 
     // 2. 调用 Chrome API 过滤浏览器书签 (支持防抖)
-    if (typeof chrome !== "undefined" && chrome.bookmarks?.search) {
+    const chromeApi = typeof chrome === "undefined" ? undefined : chrome
+    if (chromeApi?.bookmarks?.search) {
       const requestId = ++searchRequestRef.current
       const timer = setTimeout(() => {
         const runSearch = () => {
-          chrome.bookmarks.search(query, (results) => {
+          chromeApi.bookmarks.search(query, (results) => {
             // 仅处理最新的请求结果，防止竞态条件
             if (searchRequestRef.current !== requestId) return
-            if (chrome.runtime?.lastError) {
-              logger.warn("[bookmarks] Failed:", chrome.runtime.lastError.message)
+            if (chromeApi.runtime?.lastError) {
+              logger.warn("[bookmarks] Failed:", chromeApi.runtime.lastError.message)
               setSearchResults(appMatches)
               return
             }
@@ -237,24 +239,16 @@ const SearchBarInner = () => {
           })
         }
 
-        if (chrome.permissions?.contains) {
-          chrome.permissions.contains({ permissions: ["bookmarks"] }, (granted) => {
-            if (searchRequestRef.current !== requestId) return
-            if (chrome.runtime?.lastError) {
-              logger.warn("[bookmarks] Permission check failed:", chrome.runtime.lastError.message)
-              setSearchResults(appMatches)
-              return
-            }
-            if (!granted) {
-              logger.warn("[bookmarks] Permission not granted")
-              setSearchResults(appMatches)
-              return
-            }
-            runSearch()
-          })
-        } else {
+        const runWithPermission = async () => {
+          const granted = await ensureChromePermission(chromeApi, "bookmarks")
+          if (searchRequestRef.current !== requestId) return
+          if (!granted) {
+            setSearchResults(appMatches)
+            return
+          }
           runSearch()
         }
+        void runWithPermission()
       }, 150)
       return () => clearTimeout(timer)
     } else {

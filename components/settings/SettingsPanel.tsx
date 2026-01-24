@@ -12,6 +12,7 @@ import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
 import { DEFAULT_SETTINGS, LAYOUT_LIMITS, clampNumber, type ThemeMode, type VisualTheme } from "~utils/settings"
 import { getTranslations, type Language } from "~utils/i18n"
 import { setChunkedData } from "~utils/chunkedStorage"
+import { lockBodyScroll } from "~utils/scrollLock"
 import { sanitizeHexColor, sanitizeInternalUrl, sanitizeName, sanitizeUrl } from "~utils/validation"
 import RangeInput from "./RangeInput"
 import "./SettingsPanel.css"
@@ -89,14 +90,9 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
    * 3. 注册 Esc 快捷键关闭监听。
    */
   useEffect(() => {
-    // 获取隐藏前滚动条宽度以进行像素补偿
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
     previousFocusRef.current = document.activeElement as HTMLElement
 
-    document.body.style.overflow = "hidden"
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`
-    }
+    const unlockScroll = lockBodyScroll()
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -106,8 +102,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     document.addEventListener('keydown', handleEscape)
 
     return () => {
-      document.body.style.overflow = ""
-      document.body.style.paddingRight = ""
+      unlockScroll()
       document.removeEventListener('keydown', handleEscape)
       if (previousFocusRef.current) {
         previousFocusRef.current.focus()
