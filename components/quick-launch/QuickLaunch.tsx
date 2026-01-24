@@ -106,7 +106,7 @@ const QuickLaunch = () => {
 
   useQuickLaunchFaviconMigrations(safeStorageGroups, setGroups)
 
-  const { contextMenu, openContextMenu, closeContextMenu } = useQuickLaunchContextMenu()
+  const { contextMenu, openContextMenu, openContextMenuAt, closeContextMenu } = useQuickLaunchContextMenu()
 
   /** 表单数据状态：用于新增或编辑应用 */
   const [formData, setFormData] = useState<{
@@ -203,6 +203,16 @@ const QuickLaunch = () => {
    */
   const handleContextMenu = (e: React.MouseEvent, app: QuickLaunchApp, groupId: string) => {
     openContextMenu(e, app, groupId)
+  }
+
+  const handleLongPressMenu = (
+    x: number,
+    y: number,
+    anchor: HTMLElement,
+    app: QuickLaunchApp,
+    groupId: string
+  ) => {
+    openContextMenuAt(x, y, anchor, app, groupId)
   }
 
   /**
@@ -415,6 +425,7 @@ const QuickLaunch = () => {
         onDragStart={handleDragStart}
         onDragCancel={handleDragCancel}
         onContextMenu={handleContextMenu}
+        onLongPressMenu={handleLongPressMenu}
         onAddShortcut={(groupId) => {
           setActiveGroupId(groupId)
           setFormData({ name: "", url: "", color: "#6c5ce7", internalUrl: "", groupId, iconStyle: "image", customText: "", localIcon: "", customIcon: "" })

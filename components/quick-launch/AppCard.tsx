@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import SmartIcon from "./SmartIcon"
@@ -12,6 +13,8 @@ interface AppCardProps {
   app: QuickLaunchApp
   /** 右键菜单触发回调 */
   onContextMenu: (e: React.MouseEvent, app: QuickLaunchApp) => void
+  /** 触摸长按菜单触发回调 */
+  onLongPressMenu?: (x: number, y: number, anchor: HTMLElement) => void
   /** 
    * 本地图标覆盖 (Base64)
    * @description 优先于 app.localIcon，用于在 QuickLaunch 异步加载完图标缓存后实时更新显示。
@@ -19,15 +22,22 @@ interface AppCardProps {
   localIconOverride?: string
 }
 
+const LONG_PRESS_DELAY = 450
+const LONG_PRESS_MOVE_THRESHOLD = 6
+
 /**
  * AppCard 组件
  * @description 快捷启动栏中的单个应用卡片，支持拖拽排序、自定义图标渲染、多方式跳转以及右键菜单。
  */
-const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
+const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: AppCardProps) => {
   /** 
    * DND Kit 拖拽钩子
    * @see https://docs.dndkit.com/presets/sortable/usesortable
    */
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressTriggeredRef = useRef(false)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const lastPointerTypeRef = useRef<string | null>(null)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: app.id,
     animateLayoutChanges: (args) => {
@@ -43,6 +53,19 @@ const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
     opacity: isDragging ? 0 : undefined
   }
 
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      clearLongPressTimer()
+    }
+  }, [])
+
   /**
    * 处理点击事件
    * @description 
@@ -51,6 +74,12 @@ const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
    * 3. 区分普通点击 (当前页) 和组合键点击 (新标签页)。
    */
   const handleClick = (e: React.MouseEvent) => {
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     // 阻止事件冒泡，防止与 dnd-kit 或其他监听器冲突
     e.stopPropagation()
 
@@ -108,13 +137,59 @@ const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
     e.currentTarget.style.userSelect = 'auto'
   }
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    lastPointerTypeRef.current = e.pointerType
+    if (e.pointerType !== "touch" || !onLongPressMenu) return
+    longPressTriggeredRef.current = false
+    touchStartRef.current = { x: e.clientX, y: e.clientY }
+    clearLongPressTimer()
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null
+      longPressTriggeredRef.current = true
+      onLongPressMenu(e.clientX, e.clientY, e.currentTarget)
+    }, LONG_PRESS_DELAY)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "touch" || !touchStartRef.current) return
+    const deltaX = e.clientX - touchStartRef.current.x
+    const deltaY = e.clientY - touchStartRef.current.y
+    if (Math.hypot(deltaX, deltaY) > LONG_PRESS_MOVE_THRESHOLD) {
+      clearLongPressTimer()
+      touchStartRef.current = null
+    }
+  }
+
+  const handlePointerUp = () => {
+    clearLongPressTimer()
+    touchStartRef.current = null
+  }
+
+  const handlePointerCancel = () => {
+    clearLongPressTimer()
+    touchStartRef.current = null
+    longPressTriggeredRef.current = false
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (lastPointerTypeRef.current === "touch") {
+      e.preventDefault()
+      return
+    }
+    onContextMenu(e, app)
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="app-card soft-out"
       data-dragging={isDragging ? "true" : undefined}
-      onContextMenu={(e) => onContextMenu(e, app)}
+      onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       tabIndex={0}

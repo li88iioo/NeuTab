@@ -37,6 +37,8 @@ export const DEFAULT_SETTINGS = {
   showTopSites: false,
   /** 是否显示“最近访问”分组 */
   showRecentHistory: false,
+  /** 搜索结果是否在新窗口打开 */
+  searchOpenInNewWindow: false,
   /** 界面语言 */
   language: "zh" as Language,
   /** 颜色主题模式 */

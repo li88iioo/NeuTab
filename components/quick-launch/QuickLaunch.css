@@ -121,6 +121,13 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .app-card,
+  .app-card-content {
+    touch-action: none;
+  }
+}
+
 /* 磁贴卡片：核心交互组件 */
 .app-card {
   width: var(--grid-card-size, var(--card-size, 110px));
@@ -288,8 +295,7 @@ body:not(.liquid-glass) .ql-modal-content .soft-out:active {
 /* Disable hover animations for all interactive elements inside modal to prevent jitter. */
 body:not(.liquid-glass) .ql-modal-content .ql-icon-style-selector .style-option:hover,
 body:not(.liquid-glass) .ql-modal-content .ql-custom-select:hover,
-body:not(.liquid-glass) .ql-modal-content .ql-color-circle:hover,
-body:not(.liquid-glass) .ql-modal-content .ql-modal-btn:hover {
+body:not(.liquid-glass) .ql-modal-content .ql-color-circle:hover {
   transform: none;
 }
 

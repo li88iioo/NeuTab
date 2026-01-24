@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
-import { FiArrowRight, FiPlus, FiTrash2, FiSearch, FiGlobe, FiEdit2, FiGrid } from "react-icons/fi"
+import { FiArrowRight, FiArrowUpRight, FiPlus, FiTrash2, FiSearch, FiGlobe, FiEdit2, FiGrid } from "react-icons/fi"
 import { BingIcon } from "./icons/BingIcon"
 import { CustomEngineIcon } from "./icons/CustomEngineIcon"
 import { GithubIcon } from "./icons/GithubIcon"
@@ -57,7 +57,7 @@ const EngineIcon = ({ engine, size = 18 }: { engine: Engine; size?: number }) =>
     case "google":
       return <GoogleColorIcon size={size} />
     case "github":
-      return <GithubIcon size={size} style={{ color: "#181717" }} />
+      return <GithubIcon size={size} />
     case "bing":
       return <BingIcon size={size} />
     default: {
@@ -94,6 +94,10 @@ const SearchBarInner = () => {
   const [storedEngineId, setStoredEngineId, { isLoading: isEngineLoading }] = useStorage(
     "currentEngine",
     "google"
+  )
+  const [openInNewWindow, setOpenInNewWindow] = useStorage(
+    "searchOpenInNewWindow",
+    DEFAULT_SETTINGS.searchOpenInNewWindow
   )
 
   /** 
@@ -163,7 +167,7 @@ const SearchBarInner = () => {
     document.addEventListener("keydown", handleKeyDown)
 
     requestAnimationFrame(() => {
-      const first = document.querySelector<HTMLElement>(".engine-menu .engine-select")
+      const first = document.querySelector<HTMLElement>(".engine-menu .engine-icon-btn")
       first?.focus?.()
     })
 
@@ -284,6 +288,7 @@ const SearchBarInner = () => {
 
   /** 优先使用本地瞬时 ID，增强交互顺滑度 */
   const currentEngineId = localEngineId ?? storedEngineId ?? "google"
+  const openInNewWindowEnabled = !!openInNewWindow
 
   /** 防御性检查：确保引擎数组有效，否则回退到默认 */
   const safeEngines = engines?.length > 0 ? engines : DEFAULT_ENGINES
@@ -301,7 +306,11 @@ const SearchBarInner = () => {
       const template = sanitizeEngineTemplateUrl(currentEngine.url)
       const encoded = encodeURIComponent(q)
       const href = template.includes("%s") ? template.replace(/%s/g, encoded) : template + encoded
-      window.location.href = href
+      if (openInNewWindowEnabled) {
+        window.open(href, "_blank", "noopener,noreferrer")
+      } else {
+        window.location.assign(href)
+      }
     } catch (e) {
       if (e instanceof Error && e.message.includes("Only HTTP/HTTPS")) {
         setUrlError(t.onlyHttps)
@@ -464,54 +473,82 @@ const SearchBarInner = () => {
         {/* 引擎下拉菜单 */}
         {showEngineMenu && (
           <div className="engine-menu soft-out" id={ENGINE_MENU_ID} role="menu" aria-label={t.currentEngine}>
-            {safeEngines.map((engine) => (
-              <div
-                key={engine.id}
-                className={`engine-item ${engine.id === currentEngineId ? 'active' : ''}`}
-              >
+            <div className="engine-menu-scroll" role="group" aria-label={t.currentEngine}>
+              <div className="engine-menu-row">
+                <div className={`engine-icon-item ${openInNewWindowEnabled ? "active" : ""}`}>
+                  <button
+                    type="button"
+                    className={`engine-icon-btn engine-toggle-btn soft-out ${openInNewWindowEnabled ? "active" : ""}`}
+                    aria-pressed={openInNewWindowEnabled}
+                    aria-label={t.searchOpenInNewWindow}
+                    title={t.searchOpenInNewWindow}
+                    onClick={() => setOpenInNewWindow(!openInNewWindowEnabled)}
+                  >
+                    <FiArrowUpRight size={16} />
+                  </button>
+                </div>
+                {safeEngines.map((engine) => {
+                  const isActive = engine.id === currentEngineId
+                  const isCustom = engine.id.startsWith("custom_")
+                  return (
+                    <div
+                      key={engine.id}
+                      className={`engine-icon-item ${isActive ? "active" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="engine-icon-btn soft-out"
+                        role="menuitemradio"
+                        aria-checked={isActive}
+                        aria-label={engine.name}
+                        title={engine.name}
+                        onClick={() => switchEngine(engine)}
+                      >
+                        <EngineIcon engine={engine} />
+                      </button>
+                      {isCustom && (
+                        <div className="engine-icon-actions">
+                          <button
+                            type="button"
+                            className="engine-icon-action"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openEditEngine(engine)
+                            }}
+                            aria-label={t.edit}
+                            title={t.edit}>
+                            <FiEdit2 size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            className="engine-icon-action delete"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteEngine(engine.id)
+                            }}
+                            aria-label={t.delete}
+                            title={t.delete}>
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
                 <button
                   type="button"
-                  className="engine-select"
-                  role="menuitemradio"
-                  aria-checked={engine.id === currentEngineId}
-                  onClick={() => switchEngine(engine)}
-                >
-                  <EngineIcon engine={engine} />
-                  <span className="engine-name">{engine.name}</span>
+                  className="engine-icon-btn engine-icon-add soft-out"
+                  onClick={() => {
+                    setShowEngineMenu(false)
+                    setShowAddEngine(true)
+                  }}
+                  aria-label={t.addCustom}
+                  title={t.addCustom}
+                  role="menuitem">
+                  <FiPlus size={16} />
                 </button>
-                {/* 仅对自定义引擎（ID 以 custom_ 开头）显示编辑和删除按钮 */}
-                {engine.id.startsWith("custom_") && (
-                  <div className="engine-actions">
-                    <button
-                      type="button"
-                      className="engine-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openEditEngine(engine)
-                      }}
-                      aria-label={t.edit}>
-                      <FiEdit2 size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className="engine-action-btn delete"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteEngine(engine.id)
-                      }}
-                      aria-label={t.delete}>
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                )}
               </div>
-            ))}
-            <button type="button" className="engine-item add-engine" onClick={() => {
-              setShowEngineMenu(false)  // 先关闭引擎菜单
-              setShowAddEngine(true)
-            }} role="menuitem">
-              <FiPlus size={16} style={{ marginRight: 6 }} /> {t.addCustom}
-            </button>
+            </div>
           </div>
         )}
 

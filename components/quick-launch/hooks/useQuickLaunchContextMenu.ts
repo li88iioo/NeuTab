@@ -28,31 +28,44 @@ export const useQuickLaunchContextMenu = () => {
     })
   }
 
-  const openContextMenu = (e: ReactMouseEvent, app: QuickLaunchApp, groupId: string) => {
-    e.preventDefault()
-    contextMenuAnchorRef.current = e.currentTarget as HTMLElement
-
+  const resolveMenuPosition = (x: number, y: number) => {
     const menuWidth = 150
     const menuHeight = 200
+    let nextX = x
+    let nextY = y
 
-    let x = e.clientX
-    let y = e.clientY
-
-    if (x + menuWidth > window.innerWidth) {
-      x = window.innerWidth - menuWidth - 20
+    if (nextX + menuWidth > window.innerWidth) {
+      nextX = window.innerWidth - menuWidth - 20
     }
 
-    if (y + menuHeight > window.innerHeight) {
-      y = window.innerHeight - menuHeight - 20
+    if (nextY + menuHeight > window.innerHeight) {
+      nextY = window.innerHeight - menuHeight - 20
     }
 
+    return { x: nextX, y: nextY }
+  }
+
+  const openContextMenuAt = (
+    x: number,
+    y: number,
+    anchor: HTMLElement,
+    app: QuickLaunchApp,
+    groupId: string
+  ) => {
+    contextMenuAnchorRef.current = anchor
+    const position = resolveMenuPosition(x, y)
     setContextMenu({
       visible: true,
-      x,
-      y,
+      x: position.x,
+      y: position.y,
       appId: app.id,
       groupId
     })
+  }
+
+  const openContextMenu = (e: ReactMouseEvent, app: QuickLaunchApp, groupId: string) => {
+    e.preventDefault()
+    openContextMenuAt(e.clientX, e.clientY, e.currentTarget as HTMLElement, app, groupId)
   }
 
   useEffect(() => {
@@ -82,6 +95,7 @@ export const useQuickLaunchContextMenu = () => {
     contextMenu,
     contextMenuAnchorRef,
     openContextMenu,
+    openContextMenuAt,
     closeContextMenu
   }
 }

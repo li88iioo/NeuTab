@@ -38,6 +38,8 @@ body.liquid-glass {
   --glass-blur-heavy: 40px;
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   --glass-shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.4);
+  --glass-shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.22);
+  --glass-shadow-sm-hover: 0 10px 28px rgba(0, 0, 0, 0.28);
   --glass-inset-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
 
   /* === Panels & Overlays (menus / modals / drawers) === */
@@ -105,6 +107,8 @@ body.liquid-glass.performance-mode {
   --glass-blur-heavy: 18px;
   --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   --glass-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.34);
+  --glass-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.22);
+  --glass-shadow-sm-hover: 0 6px 18px rgba(0, 0, 0, 0.26);
   --accent-glow: rgba(var(--accent-rgb), 0.18);
   --glow-cyan: rgba(var(--accent-rgb), 0.14);
   --glow-purple: rgba(167, 139, 250, 0.14);
@@ -115,6 +119,8 @@ body.liquid-glass.performance-mode {
 body.liquid-glass.performance-mode:not(.dark) {
   --glass-shadow: 0 6px 18px rgba(14, 18, 28, 0.1);
   --glass-shadow-lg: 0 10px 28px rgba(14, 18, 28, 0.12);
+  --glass-shadow-sm: 0 4px 12px rgba(14, 18, 28, 0.08);
+  --glass-shadow-sm-hover: 0 6px 18px rgba(14, 18, 28, 0.1);
   --accent-glow: rgba(0, 102, 255, 0.14);
   --glow-cyan: rgba(0, 102, 255, 0.1);
   --glow-purple: rgba(139, 92, 246, 0.09);
@@ -168,6 +174,8 @@ body.liquid-glass:not(.dark) {
   --glass-border-strong: rgba(14, 18, 28, 0.16);
   --glass-shadow: 0 10px 30px rgba(14, 18, 28, 0.1);
   --glass-shadow-lg: 0 18px 60px rgba(14, 18, 28, 0.14);
+  --glass-shadow-sm: 0 6px 18px rgba(14, 18, 28, 0.08);
+  --glass-shadow-sm-hover: 0 10px 26px rgba(14, 18, 28, 0.12);
   --glass-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
 
   /* === Panels & Overlays === */
@@ -277,8 +285,8 @@ body.liquid-glass .soft-out {
 }
 
 /* Keep buttons/cards lively, but avoid hover "lift" on dropdowns and panels (prevents jitter + keeps glass anchored). */
-body.liquid-glass .soft-out:hover:not(.engine-menu):not(.search-suggestions):not(.ql-context-menu):not(.ql-select-options):not(.language-select-options):not(.settings-panel):not(.ql-modal-content):not(.search-modal-content):not(.settings-nav-btn):not(.settings-top-nav-btn):not(.settings-close):not(.settings-theme-btn):not(.settings-lang-btn):not(.app-card):not(.settings-fab) {
-  transform: translateY(-3px);
+body.liquid-glass .soft-out:hover:not(.engine-menu):not(.engine-icon-btn):not(.search-suggestions):not(.ql-context-menu):not(.ql-select-options):not(.language-select-options):not(.settings-panel):not(.ql-modal-content):not(.search-modal-content):not(.settings-nav-btn):not(.settings-top-nav-btn):not(.settings-close):not(.settings-theme-btn):not(.settings-lang-btn):not(.app-card):not(.settings-fab):not(.search-btn) {
+  transform: scale(1.04);
   background: var(--glass-bg-hover);
   border-color: var(--glass-border-strong);
   box-shadow: var(--glass-shadow-lg), var(--glass-inset-shadow),
@@ -379,7 +387,7 @@ body.liquid-glass .clock-container:hover {
 }
 
 body.liquid-glass .time-display {
-  font-family: 'Inter Variable', sans-serif;
+  font-family: 'Manrope Time', 'Inter Variable', sans-serif;
   font-size: 3.52rem;
   letter-spacing: -0.06em;
   font-weight: 600;
@@ -405,7 +413,7 @@ body.liquid-glass .time-sep {
 }
 
 body.liquid-glass .date-display {
-  font-family: 'Inter Variable', sans-serif;
+  font-family: 'Manrope Date', 'Inter Variable', sans-serif;
   margin-top: 0;
   display: flex;
   flex-direction: column;
@@ -524,7 +532,7 @@ body.liquid-glass .engine-menu {
   border-radius: 16px;
   box-shadow: var(--glass-shadow-lg),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  padding: 6px;
+  padding: 12px;
   /* Disable interaction animations */
   transform: none;
   transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -537,104 +545,100 @@ body.liquid-glass .engine-menu:hover {
   border-color: var(--glass-border-strong);
 }
 
-body.liquid-glass .engine-item {
-  color: var(--txt-primary);
-  border-radius: 10px;
-  margin: 2px 0;
-  padding: 10px 12px;
-  border: 1px solid transparent;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+body.liquid-glass .engine-icon-btn.soft-out {
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-sm);
+  transition: none;
 }
 
-body.liquid-glass .engine-item:hover {
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.12) 0%,
-      rgba(255, 255, 255, 0.06) 100%);
-  border-color: var(--glass-border-strong);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: var(--accent);
+body.liquid-glass .engine-icon-btn.soft-out:hover:not(:active) {
   transform: none;
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow-sm);
+  color: var(--accent);
 }
 
-body.liquid-glass .engine-item:active {
-  background: rgba(255, 255, 255, 0.06);
+body.liquid-glass .engine-icon-item.active .engine-icon-btn:hover:not(:active) {
+  background: var(--glass-bg-active);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+body.liquid-glass .engine-icon-btn:active {
   transform: scale(0.98);
+  background: var(--glass-bg-active);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
-body.liquid-glass .engine-item.active {
-  background: linear-gradient(135deg,
-      rgba(var(--accent-rgb), 0.15) 0%,
-      rgba(var(--accent-rgb), 0.08) 100%);
+body.liquid-glass .engine-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--glass-shadow-sm), 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+}
+
+body.liquid-glass .engine-icon-item.active .engine-icon-btn {
+  background: var(--glass-bg-active);
   border-color: rgba(var(--accent-rgb), 0.3);
   color: var(--accent);
-  box-shadow: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
-body.liquid-glass .add-engine {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  margin-top: 6px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Override neumorphic shadows from SearchBar.css. */
-  box-shadow: none;
-  color: var(--txt-secondary);
-  justify-content: center;
-}
-
-body.liquid-glass .add-engine:hover {
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 100%);
-  border-color: var(--glass-border-strong);
-  border-style: solid;
+body.liquid-glass .engine-toggle-btn.active {
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+    inset 0 2px 4px rgba(0, 0, 0, 0.12),
+    0 0 0 2px rgba(var(--accent-rgb), 0.28);
 }
 
-body.liquid-glass .add-engine:active {
-  background: rgba(255, 255, 255, 0.06);
-  transform: scale(0.98);
-  box-shadow: none;
+body.liquid-glass .engine-icon-add.soft-out {
+  border-style: dashed;
+  color: var(--txt-secondary);
 }
 
-/* Search engine row actions: keep them glassy (avoid purple neumorphic hover from SearchBar.css). */
-body.liquid-glass .engine-item:focus-within .engine-actions {
+body.liquid-glass .engine-icon-add.soft-out:hover:not(:active) {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  border-style: solid;
+  box-shadow: var(--glass-shadow-sm);
+}
+
+body.liquid-glass .engine-icon-actions {
+  opacity: 0;
+}
+
+body.liquid-glass .engine-icon-item:focus-within .engine-icon-actions {
   opacity: 1;
 }
 
-body.liquid-glass .engine-action-btn {
-  border: 1px solid transparent;
+body.liquid-glass .engine-icon-action {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: var(--txt-tertiary);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-body.liquid-glass .engine-action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
+body.liquid-glass .engine-icon-action:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
   color: var(--accent);
 }
 
-body.liquid-glass .engine-action-btn:focus-visible {
-  outline: none;
-  border-color: rgba(var(--accent-rgb), 0.35);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
-}
-
-body.liquid-glass .engine-action-btn.delete:hover {
-  background: rgba(248, 113, 113, 0.12);
-  border-color: rgba(248, 113, 113, 0.22);
+body.liquid-glass .engine-icon-action.delete:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.3);
   color: #f87171;
 }
 
-body.liquid-glass .engine-select:focus-visible {
-  outline: none;
-  border-radius: 10px;
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+
+body.liquid-glass .engine-menu-scroll {
+  scrollbar-color: transparent transparent;
+}
+
+body.liquid-glass .engine-menu-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 /* 搜索建议 */
@@ -895,12 +899,12 @@ body.liquid-glass .ql-add-btn {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-sm);
 }
 
 body.liquid-glass .ql-add-btn:hover {
   background: var(--glass-bg-hover);
-  box-shadow: var(--glass-shadow), 0 0 15px var(--glow-cyan);
+  box-shadow: var(--glass-shadow-sm-hover), 0 0 12px var(--glow-cyan);
 }
 
 /* 右键菜单 */
@@ -996,7 +1000,7 @@ body.liquid-glass .ql-modal-content {
   }
 }
 
-/* Prevent cursor jitter: the global `.soft-out:hover { transform: translateY(-3px) }`
+/* Prevent cursor jitter: the global `.soft-out:hover { transform: scale(1.04) }`
    makes the whole modal "jump" under the mouse, causing repeated hover enter/leave. */
 body.liquid-glass .ql-modal-content.soft-out:hover:not(:active),
 body.liquid-glass .ql-modal-content .soft-out:hover:not(:active) {
@@ -1225,7 +1229,7 @@ body.liquid-glass .settings-lang-btn {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: 50%;
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-sm);
   transition: color 0.2s ease, background-color 0.2s ease;
 }
 
@@ -1237,7 +1241,7 @@ body.liquid-glass .settings-lang-btn:hover {
   color: var(--accent) !important;
   /* Remove hover lift animation */
   transform: none !important;
-  box-shadow: var(--glass-shadow) !important;
+  box-shadow: var(--glass-shadow-sm) !important;
 }
 
 body.liquid-glass .settings-close:active,
@@ -1277,7 +1281,7 @@ body.liquid-glass .settings-top-nav-btn {
   -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
   border-radius: 50%;
   border: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
+  box-shadow: var(--glass-shadow-sm) !important;
   transition: none;
 }
 
@@ -1511,7 +1515,7 @@ body.liquid-glass .icon-btn {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   color: var(--txt-secondary);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-sm);
   transition: all 0.2s ease;
 }
 
@@ -1520,8 +1524,7 @@ body.liquid-glass .icon-btn:hover:not(:disabled) {
       rgba(255, 255, 255, 0.12) 0%,
       rgba(255, 255, 255, 0.06) 100%);
   border-color: var(--glass-border-strong);
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.15),
+  box-shadow: var(--glass-shadow-sm-hover),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   color: var(--accent);
 }
@@ -1592,7 +1595,7 @@ body.liquid-glass .backup-card:active {
 
 body.liquid-glass .backup-card .backup-icon {
   background: var(--glass-bg);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-sm);
 }
 
 body.liquid-glass .backup-card p {
@@ -1806,13 +1809,11 @@ body.liquid-glass:not(.dark) .ql-modal-content .soft-out:hover:not(:active) {
 }
 
 /* Hover surfaces: swap "white fog" for subtle ink shading. */
-body.liquid-glass:not(.dark) .engine-item:hover,
 body.liquid-glass:not(.dark) .suggestion-item:hover,
 body.liquid-glass:not(.dark) .ql-menu-item:hover,
 body.liquid-glass:not(.dark) .settings-btn:hover,
 body.liquid-glass:not(.dark) .ql-option:hover,
-body.liquid-glass:not(.dark) .language-select-option:hover,
-body.liquid-glass:not(.dark) .add-engine:hover {
+body.liquid-glass:not(.dark) .language-select-option:hover {
   background: linear-gradient(135deg,
       rgba(14, 18, 28, 0.045) 0%,
       rgba(14, 18, 28, 0.02) 100%);
@@ -1822,10 +1823,29 @@ body.liquid-glass:not(.dark) .add-engine:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-body.liquid-glass:not(.dark) .engine-item:active,
 body.liquid-glass:not(.dark) .ql-menu-item:active {
   background: rgba(14, 18, 28, 0.06);
 }
+
+body.liquid-glass:not(.dark) .engine-icon-action {
+  background: rgba(14, 18, 28, 0.08);
+  border-color: rgba(14, 18, 28, 0.12);
+  box-shadow: 0 8px 18px rgba(14, 18, 28, 0.12);
+  color: #64748b;
+}
+
+body.liquid-glass:not(.dark) .engine-icon-action:hover {
+  background: rgba(14, 18, 28, 0.12);
+  border-color: rgba(14, 18, 28, 0.18);
+  color: var(--accent);
+}
+
+body.liquid-glass:not(.dark) .engine-icon-action.delete:hover {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #f87171;
+}
+
 
 /* Inset controls: reduce "pressed" darkness on a bright base. */
 body.liquid-glass:not(.dark) .toggle-slider,
@@ -1896,8 +1916,8 @@ body.liquid-glass:not(.dark) ::selection {
     border-radius: 16px;
   }
 
-  body.liquid-glass .engine-item {
-    border-radius: 10px;
+  body.liquid-glass .engine-icon-btn {
+    border-radius: 50%;
   }
 }
 

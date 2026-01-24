@@ -141,6 +141,7 @@ interface Translations {
   save: string
   openInNewWindow: string
   openInternalUrl: string
+  searchOpenInNewWindow: string
   edit: string
   delete: string
   noRecords: string
@@ -290,6 +291,7 @@ const zh: Translations = {
   save: "保存",
   openInNewWindow: "新窗口打开",
   openInternalUrl: "打开内网地址",
+  searchOpenInNewWindow: "搜索结果在新窗口打开",
   edit: "编辑",
   delete: "删除",
   noRecords: "暂无记录",
@@ -437,6 +439,7 @@ const en: Translations = {
   save: "Save",
   openInNewWindow: "Open in New Window",
   openInternalUrl: "Open Internal URL",
+  searchOpenInNewWindow: "Open search results in a new window",
   edit: "Edit",
   delete: "Delete",
   noRecords: "No records",

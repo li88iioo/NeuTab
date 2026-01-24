@@ -32,6 +32,22 @@ const cleanupEarlyThemeFallback = () => {
     }
 }
 
+let themeSwitchRaf: number | null = null
+let themeSwitchRaf2: number | null = null
+
+const markThemeSwitching = () => {
+    document.body.classList.add("theme-switching")
+    if (themeSwitchRaf !== null) cancelAnimationFrame(themeSwitchRaf)
+    if (themeSwitchRaf2 !== null) cancelAnimationFrame(themeSwitchRaf2)
+    themeSwitchRaf = requestAnimationFrame(() => {
+        themeSwitchRaf2 = requestAnimationFrame(() => {
+            document.body.classList.remove("theme-switching")
+            themeSwitchRaf = null
+            themeSwitchRaf2 = null
+        })
+    })
+}
+
 /**
  * 应用视觉主题和深浅色模式类
  * @description 同步修改 `document.body` 的 class，并处理液态玻璃主题的特殊内联样式和性能降级。
@@ -43,6 +59,7 @@ export const applyThemeClasses = (
     visualTheme: VisualTheme | undefined,
     opts?: { cleanupEarlyFallback?: boolean }
 ) => {
+    markThemeSwitching()
     const mode = themeMode ?? DEFAULT_SETTINGS.themeMode
     const theme = visualTheme ?? DEFAULT_SETTINGS.visualTheme
 

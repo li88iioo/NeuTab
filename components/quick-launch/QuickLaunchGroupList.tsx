@@ -3,11 +3,13 @@ import type * as React from "react"
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  pointerWithin,
+  type Modifier,
   type DragCancelEvent,
   type DragEndEvent,
   type DragStartEvent
 } from "@dnd-kit/core"
+import { getEventCoordinates } from "@dnd-kit/utilities"
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable"
 import { FiPlus } from "react-icons/fi"
 import AppCard from "./AppCard"
@@ -26,6 +28,13 @@ interface QuickLaunchGroupListProps {
   onDragStart?: DndOnDragStart
   onDragCancel?: DndOnDragCancel
   onContextMenu: (event: React.MouseEvent, app: QuickLaunchApp, groupId: string) => void
+  onLongPressMenu: (
+    x: number,
+    y: number,
+    anchor: HTMLElement,
+    app: QuickLaunchApp,
+    groupId: string
+  ) => void
   onAddShortcut: (groupId: string) => void
   iconCache: Record<string, string>
   labels: {
@@ -39,6 +48,21 @@ interface QuickLaunchGroupListProps {
   }
 }
 
+const snapCenterToCursor: Modifier = ({ activatorEvent, draggingNodeRect, transform }) => {
+  if (draggingNodeRect && activatorEvent) {
+    const activatorCoordinates = getEventCoordinates(activatorEvent)
+    if (!activatorCoordinates) return transform
+    const offsetX = activatorCoordinates.x - draggingNodeRect.left
+    const offsetY = activatorCoordinates.y - draggingNodeRect.top
+    return {
+      ...transform,
+      x: transform.x + offsetX - draggingNodeRect.width / 2,
+      y: transform.y + offsetY - draggingNodeRect.height / 2
+    }
+  }
+  return transform
+}
+
 const QuickLaunchGroupList = ({
   groups,
   maxColumns,
@@ -47,6 +71,7 @@ const QuickLaunchGroupList = ({
   onDragStart,
   onDragCancel,
   onContextMenu,
+  onLongPressMenu,
   onAddShortcut,
   iconCache,
   labels,
@@ -116,7 +141,7 @@ const QuickLaunchGroupList = ({
               {/* 拖拽上下文 */}
               <DndContext
                 sensors={sensors}
-                collisionDetection={closestCenter}
+                collisionDetection={pointerWithin}
                 onDragStart={(event) => handleDragStart(event, group.id)}
                 onDragCancel={handleDragCancel}
                 onDragEnd={(event) => handleDragEnd(event, group.id, isDynamic)}>
@@ -131,6 +156,9 @@ const QuickLaunchGroupList = ({
                         key={app.id}
                         app={app}
                         onContextMenu={(e) => onContextMenu(e, app, group.id)}
+                        onLongPressMenu={(x, y, anchor) =>
+                          onLongPressMenu(x, y, anchor, app, group.id)
+                        }
                         // 传入本地缓存的图标，覆盖云端同步的基础数据
                         localIconOverride={iconCache[app.id]}
                       />
@@ -150,7 +178,7 @@ const QuickLaunchGroupList = ({
                   </div>
                 </SortableContext>
 
-                <DragOverlay dropAnimation={null}>
+                <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
                   {activeApp && (
                     <div className="app-card soft-out" data-dragging="true">
                       <div className="app-card-content">

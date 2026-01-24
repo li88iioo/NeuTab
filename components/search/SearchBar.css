@@ -118,16 +118,27 @@
   position: absolute;
   top: 50px;
   left: 0;
-  min-width: 220px;
-  padding: 15px;
+  right: 0;
+  width: 100%;
+  min-width: 100%;
+  padding: 12px 14px;
   z-index: 100;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  box-sizing: border-box;
   animation: searchMenuFadeIn 0.2s ease forwards;
   opacity: 0;
   transform-origin: top left;
+}
+
+body:not(.liquid-glass) .engine-menu.soft-out:active,
+body:not(.liquid-glass) .engine-menu.soft-out:focus,
+body:not(.liquid-glass) .engine-menu.soft-out:focus-within {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
 }
 
 @keyframes searchMenuFadeIn {
@@ -231,6 +242,130 @@
   opacity: 1;
 }
 
+.engine-menu-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 14px 18px 20px;
+  text-align: left;
+  scroll-padding-left: 18px;
+  scroll-padding-right: 18px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-sizing: border-box;
+}
+
+.engine-menu-scroll::-webkit-scrollbar {
+  height: 0;
+}
+
+.engine-menu-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.engine-menu-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: max-content;
+}
+
+.engine-icon-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.engine-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--txt-secondary);
+}
+
+.engine-icon-btn.soft-out {
+  box-shadow: 4px 4px 10px var(--shadow-dark),
+    -4px -4px 10px var(--shadow-light);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.engine-icon-btn.soft-out:hover:not(:active) {
+  transform: none;
+  box-shadow: none;
+  will-change: auto;
+}
+
+.engine-icon-item.active .engine-icon-btn {
+  color: var(--accent);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.engine-toggle-btn.active {
+  color: var(--accent);
+  box-shadow:
+    inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light),
+    0 0 0 2px rgba(108, 92, 231, 0.3);
+}
+
+.engine-icon-actions {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.engine-icon-item:hover .engine-icon-actions,
+.engine-icon-item:focus-within .engine-icon-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.engine-icon-action {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: var(--bg);
+  box-shadow: 2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+  color: var(--txt-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.engine-icon-action:hover {
+  color: var(--accent);
+}
+
+.engine-icon-action.delete:hover {
+  color: #e74c3c;
+}
+
+.engine-icon-add {
+  font-size: 1rem;
+  color: var(--txt-secondary);
+}
+
+
 /* 简洁的操作按钮样式 - 扁平风格 */
 .engine-action-btn {
   width: 24px;
@@ -286,6 +421,23 @@
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   outline: none;
+}
+
+.search-btn.soft-out {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+body:not(.liquid-glass) .search-btn.soft-out:hover:not(:active) {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light),
+    0 0 0 4px rgba(0, 0, 0, 0.04);
+}
+
+body.liquid-glass .search-btn.soft-out:hover:not(:active) {
+  transform: scale(1.04);
+  background: var(--glass-bg-hover);
+  box-shadow: var(--glass-shadow), 0 0 16px var(--glow-cyan);
 }
 
 .search-btn:focus,
