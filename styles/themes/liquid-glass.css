@@ -255,6 +255,11 @@ body.liquid-glass::after {
     opacity: 0.5;
   }
 }
+
+body.liquid-glass.dragging-app-card::after {
+  animation: none;
+  opacity: 0.35;
+}
 /* ============================================
    Glass Utility Classes Override
    ============================================ */
@@ -303,15 +308,16 @@ body.liquid-glass .soft-in {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: 50px;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--glass-inset-shadow);
   /* 移除 all transition，防止尺寸变化时的动画 (与主主题保持一致) */
   transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 body.liquid-glass .soft-in:focus-within {
-  border-color: var(--accent);
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2),
-    0 0 20px var(--accent-glow);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: var(--glass-inset-shadow),
+    0 0 0 3px rgba(var(--accent-rgb), 0.14);
+  background: var(--glass-bg-hover);
 }
 
 /* SmartIcon placeholder: keep it visually "part of the card" (no extra panel/shimmer). */
@@ -324,6 +330,21 @@ body.liquid-glass .icon-image-placeholder {
 body.liquid-glass .icon-image-placeholder::after {
   content: none;
   animation: none;
+}
+
+body.liquid-glass .error-boundary-card {
+  background: var(--glass-panel-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+body.liquid-glass .error-boundary-stack {
+  background: var(--glass-bg-active);
+  border: 1px solid var(--glass-border);
+  color: var(--txt-secondary);
 }
 
 /* ============================================
@@ -748,6 +769,36 @@ body.liquid-glass .app-card {
   position: relative;
   overflow: hidden;
   border-radius: var(--card-radius, 20%);
+}
+
+body.liquid-glass.dragging-app-card .app-card {
+  background: var(--glass-bg-solid);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--glass-shadow);
+  transition: none;
+  will-change: transform;
+}
+
+body.liquid-glass.dragging-app-card .app-card::before {
+  opacity: 0;
+}
+
+body.liquid-glass.dragging-app-card .app-card:hover {
+  background: var(--glass-bg-solid) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+body.liquid-glass .app-card[data-dragging="true"] {
+  background: var(--glass-bg-solid);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--glass-shadow);
+  will-change: transform;
+}
+
+body.liquid-glass .app-card[data-dragging="true"]::before {
+  opacity: 0;
 }
 
 /* 彩虹边框效果 */

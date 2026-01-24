@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowRight, FiPlus, FiTrash2, FiSearch, FiGlobe, FiEdit2, FiGrid } from "react-icons/fi"
@@ -11,6 +11,7 @@ import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
 import { DEFAULT_SETTINGS } from "~utils/settings"
 import { getTranslations, type Language } from "~utils/i18n"
 import { getBrowserFaviconUrl } from "~utils/favicon"
+import { logger } from "~utils/logger"
 import type { QuickLaunchGroup, QuickLaunchApp } from "~types/quickLaunch"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeUrl } from "~utils/validation"
 import "./SearchBar.css"
@@ -213,21 +214,47 @@ const SearchBarInner = () => {
     }
 
     // 2. 调用 Chrome API 过滤浏览器书签 (支持防抖)
-    if (typeof chrome !== "undefined" && chrome.bookmarks && chrome.bookmarks.search) {
+    if (typeof chrome !== "undefined" && chrome.bookmarks?.search) {
       const requestId = ++searchRequestRef.current
       const timer = setTimeout(() => {
-        chrome.bookmarks.search(query, (results) => {
-          // 仅处理最新的请求结果，防止竞态条件
-          if (searchRequestRef.current !== requestId) return
-          const bookmarkMatches: SearchResult[] = results
-            // Filter out bookmarklets / non-web schemes (e.g. `javascript:`).
-            .filter((b) => b.url && isHttpUrl(b.url))
-            .slice(0, 50)
-            .map(b => ({ type: 'bookmark', data: b }))
+        const runSearch = () => {
+          chrome.bookmarks.search(query, (results) => {
+            // 仅处理最新的请求结果，防止竞态条件
+            if (searchRequestRef.current !== requestId) return
+            if (chrome.runtime?.lastError) {
+              logger.warn("[bookmarks] Failed:", chrome.runtime.lastError.message)
+              setSearchResults(appMatches)
+              return
+            }
+            const bookmarkMatches: SearchResult[] = results
+              // Filter out bookmarklets / non-web schemes (e.g. `javascript:`).
+              .filter((b) => b.url && isHttpUrl(b.url))
+              .slice(0, 50)
+              .map(b => ({ type: 'bookmark', data: b }))
 
-          // 合并：常用 App 在前，书签在后
-          setSearchResults([...appMatches, ...bookmarkMatches].slice(0, 50))
-        })
+            // 合并：常用 App 在前，书签在后
+            setSearchResults([...appMatches, ...bookmarkMatches].slice(0, 50))
+          })
+        }
+
+        if (chrome.permissions?.contains) {
+          chrome.permissions.contains({ permissions: ["bookmarks"] }, (granted) => {
+            if (searchRequestRef.current !== requestId) return
+            if (chrome.runtime?.lastError) {
+              logger.warn("[bookmarks] Permission check failed:", chrome.runtime.lastError.message)
+              setSearchResults(appMatches)
+              return
+            }
+            if (!granted) {
+              logger.warn("[bookmarks] Permission not granted")
+              setSearchResults(appMatches)
+              return
+            }
+            runSearch()
+          })
+        } else {
+          runSearch()
+        }
       }, 150)
       return () => clearTimeout(timer)
     } else {
@@ -296,7 +323,53 @@ const SearchBarInner = () => {
     window.location.href = url
   }
 
-  const suggestionsVisible = suggestionsOpen && !!query.trim() && searchResults.length > 0
+  const suggestions = useMemo(() => {
+    if (!searchResults.length) return []
+
+    return searchResults.map((item) => {
+      const data = item.data
+      const isApp = item.type === "app"
+      const url = isApp
+        ? ((data as QuickLaunchApp).url || (data as QuickLaunchApp).internalUrl || "")
+        : (data as chrome.bookmarks.BookmarkTreeNode).url || ""
+      const name = isApp ? (data as QuickLaunchApp).name : (data as chrome.bookmarks.BookmarkTreeNode).title
+      const id = isApp ? (data as QuickLaunchApp).id : (data as chrome.bookmarks.BookmarkTreeNode).id
+
+      const hostname = (() => {
+        try {
+          return new URL(url).hostname.replace(/^www\./, "")
+        } catch {
+          return url
+        }
+      })()
+
+      let iconUrl: string | null = null
+
+      if (isApp) {
+        const appData = data as QuickLaunchApp
+        // 优先级：自定义图标 URL (非 Base64/Data URI) > Favicon
+        if (appData.customIcon && !appData.customIcon.startsWith("data:")) {
+          iconUrl = appData.customIcon
+        }
+      }
+
+      if (!iconUrl) {
+        // 如果是书签或 App 未设置自定义图标，从浏览器获取 favicon
+        iconUrl = getBrowserFaviconUrl(url, 32)
+      }
+
+      return {
+        key: `${item.type}_${id}`,
+        url,
+        name,
+        hostname,
+        iconUrl,
+        isApp
+      }
+    })
+  }, [searchResults])
+
+  const suggestionsVisible = suggestionsOpen && !!query.trim() && suggestions.length > 0
 
   const handleInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (!suggestionsVisible) return
@@ -310,7 +383,7 @@ const SearchBarInner = () => {
 
     if (e.key === "ArrowDown") {
       e.preventDefault()
-      setActiveSuggestionIndex((prev) => Math.min(searchResults.length - 1, Math.max(0, prev + 1)))
+      setActiveSuggestionIndex((prev) => Math.min(suggestions.length - 1, Math.max(0, prev + 1)))
       return
     }
 
@@ -321,13 +394,8 @@ const SearchBarInner = () => {
     }
 
     if (e.key === "Enter" && activeSuggestionIndex >= 0) {
-      const item = searchResults[activeSuggestionIndex]
-      const b = item?.data
-      const isApp = item?.type === "app"
-      const url = isApp
-        ? ((b as QuickLaunchApp).url || (b as QuickLaunchApp).internalUrl || "")
-        : (b as chrome.bookmarks.BookmarkTreeNode).url || ""
-
+      const item = suggestions[activeSuggestionIndex]
+      const url = item?.url || ""
       if (url) {
         e.preventDefault()
         openSuggestion(url)
@@ -476,42 +544,10 @@ const SearchBarInner = () => {
             <div className="suggestion-header">
               <FiSearch size={12} color="var(--accent)" /> {t.bestMatch}
             </div>
-            {searchResults.map((item, index) => {
-              const b = item.data
-              const isApp = item.type === 'app'
-              const url = isApp
-                ? ((b as QuickLaunchApp).url || (b as QuickLaunchApp).internalUrl || "")
-                : (b as chrome.bookmarks.BookmarkTreeNode).url || ""
-              const name = isApp ? (b as QuickLaunchApp).name : (b as chrome.bookmarks.BookmarkTreeNode).title
-              const id = isApp ? (b as QuickLaunchApp).id : (b as chrome.bookmarks.BookmarkTreeNode).id
-
-              const hostname = (() => {
-                try {
-                  return new URL(url).hostname.replace(/^www\./, "")
-                } catch {
-                  return url
-                }
-              })()
-
-              // 解析图标 URL
-              let iconUrl: string | null = null
-
-              if (isApp) {
-                const appData = b as QuickLaunchApp
-                // 优先级：自定义图标 URL (非 Base64/Data URI) > Favicon
-                if (appData.customIcon && !appData.customIcon.startsWith("data:")) {
-                  iconUrl = appData.customIcon
-                }
-              }
-
-              if (!iconUrl) {
-                // 如果是书签或 App 未设置自定义图标，从浏览器获取 favicon
-                iconUrl = getBrowserFaviconUrl(url, 32)
-              }
-
+            {suggestions.map((item, index) => {
               return (
                 <button
-                  key={`${item.type}_${id}`}
+                  key={item.key}
                   className="suggestion-item"
                   id={`suggestion_${index}`}
                   type="button"
@@ -519,13 +555,13 @@ const SearchBarInner = () => {
                   aria-selected={activeSuggestionIndex === index}
                   onMouseDown={(e) => {
                     e.preventDefault() // 防止点击时输入框失去焦点导致列表消失
-                    openSuggestion(url)
+                    openSuggestion(item.url)
                   }}
                 >
                   <div className="suggestion-left">
-                    {iconUrl ? (
+                    {item.iconUrl ? (
                       <img
-                        src={iconUrl}
+                        src={item.iconUrl}
                         alt=""
                         className="suggestion-favicon"
                         loading="lazy"
@@ -533,14 +569,14 @@ const SearchBarInner = () => {
                         onError={(e) => (e.currentTarget.style.display = 'none')}
                       />
                     ) : (
-                      isApp ? <FiGrid size={16} className="suggestion-fallback-icon" /> : <FiGlobe size={16} className="suggestion-fallback-icon" />
+                      item.isApp ? <FiGrid size={16} className="suggestion-fallback-icon" /> : <FiGlobe size={16} className="suggestion-fallback-icon" />
                     )}
                     <span className="suggestion-title">
-                      {name}
-                      {isApp && <span style={{ fontSize: '0.7em', color: 'var(--accent)', marginLeft: '4px' }}>• {t.added}</span>}
+                      {item.name}
+                      {item.isApp && <span style={{ fontSize: '0.7em', color: 'var(--accent)', marginLeft: '4px' }}>• {t.added}</span>}
                     </span>
                   </div>
-                  <span className="suggestion-url">{hostname}</span>
+                  <span className="suggestion-url">{item.hostname}</span>
                 </button>
               )
             })}

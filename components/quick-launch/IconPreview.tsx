@@ -53,9 +53,9 @@ const IconPreview = ({
 
     // 注意：Hooks 必须在任何 return 之前调用，否则 iconStyle 切换时会触发
     // "Rendered fewer hooks than expected" 的运行时错误。
-    const domain = extractDomain(url)
-    const builtInIconUrl = getBuiltInIconUrl({ name, url })
-    const faviconUrl = getBrowserFaviconUrl(url, 64)
+    const domain = useMemo(() => extractDomain(url), [url])
+    const builtInIconUrl = useMemo(() => getBuiltInIconUrl({ name, url }), [name, url])
+    const faviconUrl = useMemo(() => getBrowserFaviconUrl(url, 64), [url])
 
     const candidates = useMemo(() => {
         // 优先级：上传图标 -> 用户提供的 URL -> 内置图标库 -> 浏览器 favicon

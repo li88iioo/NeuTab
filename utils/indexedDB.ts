@@ -24,6 +24,28 @@ function handleTransactionError(operation: string, error: any): void {
   console.error(`[IndexedDB] ${operation} failed:`, error)
 }
 
+async function isConnectionHealthy(db: IDBDatabase): Promise<boolean> {
+  try {
+    const tx = db.transaction(STORE_SETTINGS, "readonly")
+    tx.objectStore(STORE_SETTINGS).get("healthcheck")
+    return await new Promise((resolve) => {
+      let settled = false
+      const timeoutId = setTimeout(() => finish(false), 3000)
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeoutId)
+        resolve(ok)
+      }
+      tx.oncomplete = () => finish(true)
+      tx.onerror = () => finish(false)
+      tx.onabort = () => finish(false)
+    })
+  } catch {
+    return false
+  }
+}
+
 // 获取或生成设备ID
 function getDeviceId(): string {
   if (deviceId) return deviceId
@@ -36,19 +58,20 @@ function getDeviceId(): string {
 }
 
 // 打开数据库
-export function openDB(): Promise<IDBDatabase> {
+export async function openDB(): Promise<IDBDatabase> {
   // 检查现有连接是否仍然有效
   if (dbInstance) {
-    try {
-      // 测试连接：尝试访问objectStoreNames
-      if (dbInstance.objectStoreNames && dbInstance.objectStoreNames.length > 0) {
-        return Promise.resolve(dbInstance)
-      }
-    } catch {
-      // 连接已失效，重置
-      console.warn("[IndexedDB] Cached connection invalid, reopening")
-      dbInstance = null
+    const healthy = await isConnectionHealthy(dbInstance)
+    if (healthy) {
+      return dbInstance
     }
+    try {
+      dbInstance.close()
+    } catch {
+      // ignore
+    }
+    console.warn("[IndexedDB] Cached connection invalid, reopening")
+    dbInstance = null
   }
 
   return new Promise((resolve, reject) => {

@@ -7,7 +7,7 @@ import QuickLaunch from "~components/quick-launch/QuickLaunch"
 import ErrorBoundary from "~components/common/ErrorBoundary"
 import SettingsPanel from "~components/settings/SettingsPanel"
 import { DEFAULT_SETTINGS, type ThemeMode, type VisualTheme } from "~utils/settings"
-import type { Language } from "~utils/i18n"
+import { getTranslations, type Language } from "~utils/i18n"
 import "~styles/style.css"
 import "~styles/themes/liquid-glass.css"
 import { applyLayoutVariables, applyThemeClasses } from "~utils/theme"
@@ -64,6 +64,8 @@ function NewTab() {
   const [showClock, , { isLoading: showClockLoading }] = useStorage("showClock", getInitialVisibility("clock", DEFAULT_SETTINGS.showClock))
   const [showSeconds] = useStorage("showSeconds", getInitialVisibility("seconds", DEFAULT_SETTINGS.showSeconds))
   const [language] = useStorage<Language>("language", getInitialLanguage(DEFAULT_SETTINGS.language))
+  const resolvedLanguage = language || DEFAULT_SETTINGS.language
+  const t = getTranslations(resolvedLanguage)
 
   // -- 布局精细控制参数 --
   const [contentMaxWidth, , { isLoading: loadingMaxWidth }] = useStorage("contentMaxWidth", DEFAULT_SETTINGS.contentMaxWidth)
@@ -368,10 +370,10 @@ function NewTab() {
   const isBackToTopVisible = showBackToTop && !showSettings
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary language={resolvedLanguage}>
       <div className={`main-container ${!isContentReady ? 'content-loading' : ''}`}>
         <div className="layout-section-header">
-          <Header enabled={!!showClock} showSeconds={!!showSeconds} language={language || DEFAULT_SETTINGS.language} />
+          <Header enabled={!!showClock} showSeconds={!!showSeconds} language={resolvedLanguage} />
         </div>
 
         <div className="layout-section-search">
@@ -390,7 +392,7 @@ function NewTab() {
         tabIndex={shouldHideSettingsFab ? -1 : 0}
         aria-hidden={shouldHideSettingsFab ? "true" : undefined}
         inert={shouldHideSettingsFab ? "" : undefined}
-        aria-label="打开设置">
+        aria-label={t.openSettings}>
         <FiSettings size={18} />
       </button>
 
@@ -403,7 +405,7 @@ function NewTab() {
         tabIndex={isBackToTopVisible ? 0 : -1}
         aria-hidden={!isBackToTopVisible ? "true" : undefined}
         inert={!isBackToTopVisible ? "" : undefined}
-        aria-label="返回顶部">
+        aria-label={t.backToTop}>
         <FiArrowUp size={18} />
       </button>
 

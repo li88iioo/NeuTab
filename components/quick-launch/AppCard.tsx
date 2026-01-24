@@ -1,4 +1,4 @@
-import { useSortable } from "@dnd-kit/sortable"
+import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import SmartIcon from "./SmartIcon"
 import type { QuickLaunchApp } from "~types/quickLaunch"
@@ -28,11 +28,19 @@ const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
    * DND Kit 拖拽钩子
    * @see https://docs.dndkit.com/presets/sortable/usesortable
    */
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: app.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: app.id,
+    animateLayoutChanges: (args) => {
+      if (args.wasDragging) return false
+      return defaultAnimateLayoutChanges(args)
+    }
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
+    zIndex: isDragging ? 5 : undefined,
+    opacity: isDragging ? 0 : undefined
   }
 
   /**
@@ -105,6 +113,7 @@ const AppCard = ({ app, onContextMenu, localIconOverride }: AppCardProps) => {
       ref={setNodeRef}
       style={style}
       className="app-card soft-out"
+      data-dragging={isDragging ? "true" : undefined}
       onContextMenu={(e) => onContextMenu(e, app)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

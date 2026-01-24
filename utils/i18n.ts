@@ -145,6 +145,16 @@ interface Translations {
   delete: string
   noRecords: string
 
+  // -- Actions & Navigation --
+  openSettings: string
+  backToTop: string
+
+  // -- Error Boundary --
+  errorTitle: string
+  errorDescription: string
+  errorDetails: string
+  errorRefresh: string
+
   // -- 公共通用 (Common) --
   loading: string
   newTab: string
@@ -284,6 +294,16 @@ const zh: Translations = {
   delete: "删除",
   noRecords: "暂无记录",
 
+  // Actions & Navigation
+  openSettings: "打开设置",
+  backToTop: "返回顶部",
+
+  // Error Boundary
+  errorTitle: "😕 出错了",
+  errorDescription: "页面遇到了一个错误，请尝试刷新页面。",
+  errorDetails: "查看错误详情",
+  errorRefresh: "刷新页面",
+
   // Common
   loading: "加载中",
   newTab: "新标签页",
@@ -420,6 +440,16 @@ const en: Translations = {
   edit: "Edit",
   delete: "Delete",
   noRecords: "No records",
+
+  // Actions & Navigation
+  openSettings: "Open settings",
+  backToTop: "Back to top",
+
+  // Error Boundary
+  errorTitle: "😕 Something went wrong",
+  errorDescription: "The page hit an error. Please refresh.",
+  errorDetails: "View error details",
+  errorRefresh: "Reload page",
 
   // Common
   loading: "Loading",
