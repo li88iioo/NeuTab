@@ -1,0 +1,526 @@
+/**
+ * @file SearchBar.css
+ * @description 搜索栏组件样式。
+ * 
+ * 设计重点：
+ * 1. 交互式输入框：具备新拟态的“软入”（Soft-in）风格或扁平容器。
+ * 2. 搜索引擎切换：嵌入式图标与分割线设计。
+ * 3. 实时建议：弹出式的建议列表，支持书签建议与搜索引擎联想。
+ */
+
+.search-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 内部内容居中 */
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 40px auto;
+  /* 核心：水平居中 + 底部间距 */
+  padding: 5px;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 360px) {
+  .search-container {
+    margin-bottom: 20px;
+    padding: 2px;
+  }
+}
+
+.search-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 50px;
+  width: 100%;
+  /* 关键修复：占满容器宽度 */
+  box-sizing: border-box;
+  /* 防止移动端点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* When the SearchBar is disabled, we render a skeleton to preserve height without hooks/effects. */
+.search-form--placeholder {
+  min-height: 56px;
+}
+
+/* 搜索引擎图标 - 嵌入输入框内 */
+.engine-icon {
+  width: 46px;
+  /* Slightly wider to accommodate divider spacing */
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* Remove default color to let icon colors show */
+  font-size: 1.2rem;
+  transition: 0.2s;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  position: relative;
+  /* For pseudo-element */
+  margin-right: 4px;
+  /* Space between divider and input text */
+  /* 防止移动端点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+.engine-icon:focus,
+.engine-icon:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Vertical Divider */
+.engine-icon::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 20px;
+  /* Partial height */
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode adjustment for divider if needed - assuming simple var usage */
+@media (prefers-color-scheme: dark) {
+  .engine-icon::after {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.engine-icon:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  /* Subtle bg change on hover instead of color change */
+  border-radius: 8px;
+  /* Rounded highlight */
+}
+
+.engine-favicon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.engine-menu {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  min-width: 220px;
+  padding: 15px;
+  z-index: 100;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: searchMenuFadeIn 0.2s ease forwards;
+  opacity: 0;
+  transform-origin: top left;
+}
+
+@keyframes searchMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.engine-item {
+  padding: 12px 16px;
+  cursor: default;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--txt-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.engine-select {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+
+  /* Button reset */
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.engine-name {
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engine-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+  transform: translateX(3px);
+  color: var(--accent);
+}
+
+.engine-item.active {
+  background: var(--bg);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+  color: var(--accent);
+}
+
+.add-engine {
+  margin-top: 10px;
+  justify-content: center;
+  color: var(--txt-secondary);
+  background: var(--bg);
+  box-shadow: 5px 5px 10px var(--shadow-dark),
+    -5px -5px 10px var(--shadow-light);
+  font-weight: 700;
+  width: 100%;
+  border: none;
+}
+
+.add-engine:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
+  background: var(--bg);
+  box-shadow: 6px 6px 12px var(--shadow-dark),
+    -6px -6px 12px var(--shadow-light);
+}
+
+.add-engine:active {
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+}
+
+/* 操作按钮容器 - 默认隐藏，hover 时显示 */
+.engine-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.engine-item:hover .engine-actions {
+  opacity: 1;
+}
+
+/* 简洁的操作按钮样式 - 扁平风格 */
+.engine-action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  transition: all 0.15s ease;
+}
+
+.engine-action-btn:hover {
+  color: var(--accent);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.engine-action-btn.delete:hover {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  padding: 18px 15px;
+  font-size: 1.1rem;
+  color: var(--txt-primary);
+  outline: none;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  min-width: 0;
+  /* 防止 Flex 子项溢出 */
+}
+
+/* 搜索按钮：包含放大镜图标的圆形动作按钮 */
+.search-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 1rem;
+  border: none;
+  flex-shrink: 0;
+  /* 防止移动端点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  outline: none;
+}
+
+.search-btn:focus,
+.search-btn:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.search-add-engine-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  /* Keep content inside viewport on small screens / when the virtual keyboard is visible. */
+  padding: 40px 20px;
+  box-sizing: border-box;
+  overflow: auto;
+  min-height: var(--viewport-h, 100vh);
+}
+
+.search-modal-content {
+  padding: 30px;
+  min-width: 400px;
+  /* Prevent the dialog from being pushed out of view. */
+  max-width: min(520px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.search-modal-content h3 {
+  margin-bottom: 20px;
+  color: var(--txt-primary);
+}
+
+/* Remove shadow and hover animations for the modal */
+.search-modal-content.soft-out {
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.search-modal-content.soft-out:hover,
+.search-modal-content.soft-out:active {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.search-modal-input {
+  width: 100%;
+  padding: 14px 20px;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.search-modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.search-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--txt-primary);
+  font-family: inherit;
+}
+
+/* Keep the add/edit-engine modal buttons visually stable (no hover "lift"). */
+body:not(.liquid-glass) .search-modal-btn.soft-out:hover:not(:active) {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+  will-change: auto;
+}
+
+.url-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  padding-left: 5px;
+}
+
+/* 平板响应式 */
+@media (max-width: 700px) {
+  .search-modal-content {
+    min-width: auto;
+    width: 90%;
+    padding: 20px;
+  }
+}
+
+/* ============================================
+   Bookmark Suggestions (Minimalist Split)
+   ============================================ */
+
+/* 搜索建议/书签下拉建议列表 */
+.search-suggestions {
+  position: absolute;
+  top: 65px;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 10px;
+  z-index: 90;
+  /* 复用引擎菜单的动画效果 */
+  animation: searchMenuFadeIn 0.2s ease forwards;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--txt-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.suggestion-item {
+  padding: 10px 14px;
+  display: flex;
+  /* Flex container */
+  align-items: center;
+  justify-content: space-between;
+  /* Space between Left and Right */
+  gap: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--txt-primary);
+  min-height: 40px;
+  /* Enforce height */
+
+  /* Button reset (we render suggestion items as <button> for keyboard/A11y) */
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font: inherit;
+}
+
+.suggestion-item:hover {
+  background: var(--bg);
+  box-shadow: inset 2px 2px 5px var(--shadow-dark),
+    inset -2px -2px 5px var(--shadow-light);
+  transform: translateY(1px);
+}
+
+/* 焦点/选中状态：复用 hover 的凹陷效果，无需额外紫色边框 */
+.suggestion-item[aria-selected="true"],
+.suggestion-item:focus-visible {
+  background: var(--bg);
+  box-shadow: inset 2px 2px 5px var(--shadow-dark),
+    inset -2px -2px 5px var(--shadow-light);
+}
+
+/* Left components: Icon + Title */
+.suggestion-left {
+  display: flex;
+  align-items: center;
+  /* Vertically align icon and text */
+  gap: 12px;
+  flex: 1;
+  /* Take up available space */
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Force Icon Constraints */
+.suggestion-favicon {
+  width: 18px !important;
+  height: 18px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+  /* Remove inline spacing */
+}
+
+.suggestion-fallback-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--txt-secondary);
+  flex-shrink: 0;
+}
+
+.suggestion-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
+.suggestion-item:hover .suggestion-title {
+  color: var(--accent);
+}
+
+/* Right component: URL */
+.suggestion-url {
+  font-size: 0.8rem;
+  color: var(--txt-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 35%;
+  text-align: right;
+  opacity: 0.8;
+}
+
+/* Custom Scrollbar */
+.search-suggestions::-webkit-scrollbar {
+  display: none;
+}
+
+.search-suggestions {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

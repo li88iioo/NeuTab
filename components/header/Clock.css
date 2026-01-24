@@ -1,0 +1,146 @@
+/**
+ * @file Clock.css
+ * @description 时钟组件样式。
+ * 
+ * 核心设计点：
+ * 1. 响应式布局：垂直堆叠时分和日期。
+ * 2. 动画效果：冒号的分离器具备呼吸效果（Neumorph 为透明度/缩放演变）。
+ * 3. 布局稳定性：使用 tabular-nums 确保数字宽度一致，防止每秒跳动时的布局抖动。
+ */
+
+/* --- 容器布局 --- */
+.clock-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* 防止加载时的布局跳变 */
+    min-height: 48px;
+    cursor: default;
+    user-select: none;
+    /* GPU 加速提示，确保动画流畅 */
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* --- 时间行 (时:分) --- */
+.time-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    line-height: 1;
+    /* 使用等宽数字，确保 1 和 8 占据同样的水平空间，防止时钟抖动 */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+.time-unit {
+    font-weight: 700;
+    display: inline-block;
+    text-align: center;
+}
+
+.time-sep {
+    display: inline-block;
+    text-align: center;
+    font-weight: 700;
+    /* 确保分隔符宽度固定，防止呼吸动画影响整体布局 */
+    width: 0.5em;
+    opacity: 1;
+}
+
+/* --- 日期行 --- */
+.date-display {
+    margin-top: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* 严格控制行高，便于分隔符垂直居中 */
+    line-height: 1;
+}
+
+.date-md,
+.date-wd {
+    /* 确保 Flex 行内垂直对齐基准一致 */
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.date-sep {
+    width: 1px;
+    /* 视觉居中优化：略短于 1em 在多数 UI 字体下看起来更协调 */
+    height: 0.78em;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.35;
+    align-self: center;
+    /* 微调垂直位移进行光学纠正 */
+    transform: translateY(0.04em);
+}
+
+/* ============================================
+   风格：新拟态 (Neumorphic)
+   ============================================ */
+body:not(.liquid-glass) .clock-container {
+    color: var(--txt-primary);
+    padding: 10px;
+}
+
+body:not(.liquid-glass) .time-display {
+    font-family: 'Outfit Variable', sans-serif;
+    font-size: 3.5rem;
+    letter-spacing: -1px;
+    /* 柔和的阴影：提供深度感而非发光感 */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1),
+        -1px -1px 2px rgba(255, 255, 255, 0.5);
+}
+
+body.dark:not(.liquid-glass) .time-display {
+    /* 深色模式下的阴影对比度调整 */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3),
+        -1px -1px 2px rgba(255, 255, 255, 0.1);
+}
+
+body:not(.liquid-glass) .date-display {
+    font-family: 'Outfit Variable', sans-serif;
+    color: var(--txt-secondary);
+}
+
+/* 冒号呼吸动画 */
+@keyframes neumorph-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(0.95);
+    }
+}
+
+body:not(.liquid-glass) .time-sep {
+    animation: neumorph-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   移动端响应式
+   ============================================ */
+@media (max-width: 768px) {
+
+    /* 移动端缩放时钟尺寸 */
+    body:not(.liquid-glass) .time-display {
+        font-size: 2.8rem;
+    }
+
+    .date-display {
+        font-size: 0.8rem;
+    }
+}

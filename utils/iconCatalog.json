@@ -1,0 +1,1187 @@
+{
+  "163.com": {
+    "pack": "si",
+    "iconName": "SiNeteasecloudmusic",
+    "color": "#c20c0c"
+  },
+  "192.168.88.1": {
+    "pack": "si",
+    "iconName": "SiOpenwrt",
+    "color": "#00b5e2"
+  },
+  "adobe.com": {
+    "pack": "si",
+    "iconName": "SiAdobe",
+    "color": "#ff0000"
+  },
+  "airbnb.com": {
+    "pack": "si",
+    "iconName": "SiAirbnb",
+    "color": "#ff5a5f"
+  },
+  "airtable.com": {
+    "pack": "si",
+    "iconName": "SiAirtable",
+    "color": "#18bfff"
+  },
+  "aliexpress.com": {
+    "pack": "si",
+    "iconName": "SiAliexpress",
+    "color": "#ff6a00"
+  },
+  "aliyun.com": {
+    "pack": "si",
+    "iconName": "SiAlibabadotcom",
+    "color": "#ff6a00"
+  },
+  "amazon.com": {
+    "pack": "fa6",
+    "iconName": "FaAmazon",
+    "color": "#ff9900"
+  },
+  "amd.com": {
+    "pack": "si",
+    "iconName": "SiAmd",
+    "color": "#ed1c24"
+  },
+  "anthropic.com": {
+    "pack": "si",
+    "iconName": "SiAnthropic",
+    "color": "#d4a27f"
+  },
+  "apple.com": {
+    "pack": "fa6",
+    "iconName": "FaApple",
+    "color": "#000000"
+  },
+  "archive.org": {
+    "pack": "si",
+    "iconName": "SiInternetarchive",
+    "color": "#000000"
+  },
+  "archlinux.org": {
+    "pack": "si",
+    "iconName": "SiArchlinux",
+    "color": "#1793d1"
+  },
+  "asana.com": {
+    "pack": "si",
+    "iconName": "SiAsana",
+    "color": "#f06a6a"
+  },
+  "aws.amazon.com": {
+    "pack": "fa6",
+    "iconName": "FaAws",
+    "color": "#ff9900"
+  },
+  "azure.microsoft.com": {
+    "pack": "si",
+    "iconName": "SiMicrosoftazure",
+    "color": "#0078d4"
+  },
+  "baidu.com": {
+    "pack": "si",
+    "iconName": "SiBaidu",
+    "color": "#2319dc"
+  },
+  "bandcamp.com": {
+    "pack": "si",
+    "iconName": "SiBandcamp",
+    "color": "#408294"
+  },
+  "bard.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglegemini",
+    "color": "#8e75b2"
+  },
+  "bbc.com": {
+    "pack": "si",
+    "iconName": "SiBbc",
+    "color": "#000000"
+  },
+  "behance.net": {
+    "pack": "fa6",
+    "iconName": "FaBehance",
+    "color": "#1769ff"
+  },
+  "bilibili.com": {
+    "pack": "si",
+    "iconName": "SiBilibili",
+    "color": "#00aeec"
+  },
+  "binance.com": {
+    "pack": "si",
+    "iconName": "SiBinance",
+    "color": "#f0b90b"
+  },
+  "bing.com": {
+    "pack": "si",
+    "iconName": "SiBing",
+    "color": "#258ffa"
+  },
+  "bitbucket.org": {
+    "pack": "fa6",
+    "iconName": "FaBitbucket",
+    "color": "#0052cc"
+  },
+  "blizzard.com": {
+    "pack": "si",
+    "iconName": "SiBlizzard",
+    "color": "#00ceff"
+  },
+  "booking.com": {
+    "pack": "si",
+    "iconName": "SiBookingdotcom",
+    "color": "#003580"
+  },
+  "box.com": {
+    "pack": "si",
+    "iconName": "SiBox",
+    "color": "#0061d5"
+  },
+  "brilliant.org": {
+    "pack": "si",
+    "iconName": "SiBrilliant",
+    "color": "#000000"
+  },
+  "bytedance.com": {
+    "pack": "si",
+    "iconName": "SiBytedance",
+    "color": "#000000"
+  },
+  "calendar.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglecalendar",
+    "color": "#4285f4"
+  },
+  "canva.com": {
+    "pack": "si",
+    "iconName": "SiCanva",
+    "color": "#00c4cc"
+  },
+  "centos.org": {
+    "pack": "si",
+    "iconName": "SiCentos",
+    "color": "#262577"
+  },
+  "chat.openai.com": {
+    "pack": "si",
+    "iconName": "SiOpenai",
+    "color": "#412991"
+  },
+  "chatgpt.com": {
+    "pack": "si",
+    "iconName": "SiOpenai",
+    "color": "#412991"
+  },
+  "claude.ai": {
+    "pack": "si",
+    "iconName": "SiAnthropic",
+    "color": "#d4a27f"
+  },
+  "clickup.com": {
+    "pack": "si",
+    "iconName": "SiClickup",
+    "color": "#7b68ee"
+  },
+  "cloud.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglecloud",
+    "color": "#4285f4"
+  },
+  "cloudflare.com": {
+    "pack": "si",
+    "iconName": "SiCloudflare",
+    "color": "#f38020"
+  },
+  "cnn.com": {
+    "pack": "si",
+    "iconName": "SiCnn",
+    "color": "#cc0000"
+  },
+  "codecademy.com": {
+    "pack": "si",
+    "iconName": "SiCodecademy",
+    "color": "#1f4056"
+  },
+  "codepen.io": {
+    "pack": "fa6",
+    "iconName": "FaCodepen",
+    "color": "#000000"
+  },
+  "codesandbox.io": {
+    "pack": "si",
+    "iconName": "SiCodesandbox",
+    "color": "#151515"
+  },
+  "coinbase.com": {
+    "pack": "si",
+    "iconName": "SiCoinbase",
+    "color": "#0052ff"
+  },
+  "colab.research.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglecolab",
+    "color": "#f9ab00"
+  },
+  "coursera.org": {
+    "pack": "si",
+    "iconName": "SiCoursera",
+    "color": "#0056d2"
+  },
+  "craigslist.org": {
+    "pack": "si",
+    "iconName": "SiCraigslist",
+    "color": "#562b82"
+  },
+  "dash.cloudflare.com": {
+    "pack": "si",
+    "iconName": "SiCloudflare",
+    "color": "#f38020"
+  },
+  "debian.org": {
+    "pack": "si",
+    "iconName": "SiDebian",
+    "color": "#a81d33"
+  },
+  "deezer.com": {
+    "pack": "si",
+    "iconName": "SiDeezer",
+    "color": "#feaa2d"
+  },
+  "dev.to": {
+    "pack": "si",
+    "iconName": "SiDevdotto",
+    "color": "#0a0a0a"
+  },
+  "digitalocean.com": {
+    "pack": "si",
+    "iconName": "SiDigitalocean",
+    "color": "#0080ff"
+  },
+  "dingtalk.com": {
+    "pack": "si",
+    "iconName": "SiDingtalk",
+    "color": "#007fff"
+  },
+  "discord.com": {
+    "pack": "fa6",
+    "iconName": "FaDiscord",
+    "color": "#5865f2"
+  },
+  "disneyplus.com": {
+    "pack": "si",
+    "iconName": "SiDisneyplus",
+    "color": "#113ccf"
+  },
+  "docker.com": {
+    "pack": "fa6",
+    "iconName": "FaDocker",
+    "color": "#2496ed"
+  },
+  "docs.google.com": {
+    "pack": "si",
+    "iconName": "SiGoogledocs",
+    "color": "#4285f4"
+  },
+  "doordash.com": {
+    "pack": "si",
+    "iconName": "SiDoordash",
+    "color": "#ff3008"
+  },
+  "douyin.com": {
+    "pack": "si",
+    "iconName": "SiTiktok",
+    "color": "#000000"
+  },
+  "dribbble.com": {
+    "pack": "fa6",
+    "iconName": "FaDribbble",
+    "color": "#ea4c89"
+  },
+  "drive.google.com": {
+    "pack": "si",
+    "iconName": "SiGoogledrive",
+    "color": "#4285f4"
+  },
+  "dropbox.com": {
+    "pack": "fa6",
+    "iconName": "FaDropbox",
+    "color": "#0061ff"
+  },
+  "duckduckgo.com": {
+    "pack": "si",
+    "iconName": "SiDuckduckgo",
+    "color": "#de5833"
+  },
+  "duolingo.com": {
+    "pack": "si",
+    "iconName": "SiDuolingo",
+    "color": "#58cc02"
+  },
+  "ea.com": {
+    "pack": "si",
+    "iconName": "SiEa",
+    "color": "#000000"
+  },
+  "ebay.com": {
+    "pack": "si",
+    "iconName": "SiEbay",
+    "color": "#e53238"
+  },
+  "ecosia.org": {
+    "pack": "si",
+    "iconName": "SiEcosia",
+    "color": "#3eb85f"
+  },
+  "edx.org": {
+    "pack": "si",
+    "iconName": "SiEdx",
+    "color": "#02262b"
+  },
+  "epicgames.com": {
+    "pack": "si",
+    "iconName": "SiEpicgames",
+    "color": "#313131"
+  },
+  "etsy.com": {
+    "pack": "si",
+    "iconName": "SiEtsy",
+    "color": "#f45800"
+  },
+  "evernote.com": {
+    "pack": "si",
+    "iconName": "SiEvernote",
+    "color": "#00a82d"
+  },
+  "facebook.com": {
+    "pack": "fa6",
+    "iconName": "FaFacebookF",
+    "color": "#1877f2"
+  },
+  "fedoraproject.org": {
+    "pack": "si",
+    "iconName": "SiFedora",
+    "color": "#51a2da"
+  },
+  "feishu.cn": {
+    "pack": "si",
+    "iconName": "SiLark",
+    "color": "#00d6b9"
+  },
+  "figma.com": {
+    "pack": "fa6",
+    "iconName": "FaFigma",
+    "color": "#f24e1e"
+  },
+  "firebase.google.com": {
+    "pack": "si",
+    "iconName": "SiFirebase",
+    "color": "#ffca28"
+  },
+  "framer.com": {
+    "pack": "si",
+    "iconName": "SiFramer",
+    "color": "#0055ff"
+  },
+  "freecodecamp.org": {
+    "pack": "si",
+    "iconName": "SiFreecodecamp",
+    "color": "#0a0a23"
+  },
+  "gemini.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglegemini",
+    "color": "#8e75b2"
+  },
+  "github.com": {
+    "pack": "fa6",
+    "iconName": "FaGithub",
+    "color": "#181717"
+  },
+  "gitlab.com": {
+    "pack": "fa6",
+    "iconName": "FaGitlab",
+    "color": "#fc6d26"
+  },
+  "gmail.com": {
+    "pack": "si",
+    "iconName": "SiGmail",
+    "color": "#ea4335"
+  },
+  "gog.com": {
+    "pack": "si",
+    "iconName": "SiGogoinflight",
+    "color": "#86328a"
+  },
+  "goodreads.com": {
+    "pack": "si",
+    "iconName": "SiGoodreads",
+    "color": "#553b08"
+  },
+  "google.com": {
+    "pack": "si",
+    "iconName": "SiGoogle",
+    "color": "gradient-google"
+  },
+  "grubhub.com": {
+    "pack": "si",
+    "iconName": "SiGrubhub",
+    "color": "#f63440"
+  },
+  "hackerrank.com": {
+    "pack": "si",
+    "iconName": "SiHackerrank",
+    "color": "#00ea64"
+  },
+  "hashnode.com": {
+    "pack": "si",
+    "iconName": "SiHashnode",
+    "color": "#2962ff"
+  },
+  "hbomax.com": {
+    "pack": "si",
+    "iconName": "SiHbo",
+    "color": "#000000"
+  },
+  "heroku.com": {
+    "pack": "si",
+    "iconName": "SiHeroku",
+    "color": "#430098"
+  },
+  "hub.docker.com": {
+    "pack": "fa6",
+    "iconName": "FaDocker",
+    "color": "#2496ed"
+  },
+  "huggingface.co": {
+    "pack": "si",
+    "iconName": "SiHuggingface",
+    "color": "#ffd21e"
+  },
+  "hulu.com": {
+    "pack": "si",
+    "iconName": "SiHulu",
+    "color": "#1ce783"
+  },
+  "ibm.com": {
+    "pack": "si",
+    "iconName": "SiIbm",
+    "color": "#052fab"
+  },
+  "icloud.com": {
+    "pack": "si",
+    "iconName": "SiIcloud",
+    "color": "#3693f3"
+  },
+  "imdb.com": {
+    "pack": "si",
+    "iconName": "SiImdb",
+    "color": "#f5c518"
+  },
+  "instagram.com": {
+    "pack": "fa6",
+    "iconName": "FaInstagram",
+    "color": "#e4405f"
+  },
+  "intel.com": {
+    "pack": "si",
+    "iconName": "SiIntel",
+    "color": "#0071c5"
+  },
+  "invisionapp.com": {
+    "pack": "si",
+    "iconName": "SiInvision",
+    "color": "#ff3366"
+  },
+  "iqiyi.com": {
+    "pack": "si",
+    "iconName": "SiIqiyi",
+    "color": "#00be06"
+  },
+  "itch.io": {
+    "pack": "si",
+    "iconName": "SiItchdotio",
+    "color": "#fa5c5c"
+  },
+  "jd.com": {
+    "pack": "si",
+    "iconName": "SiJd",
+    "color": "#e2231a"
+  },
+  "jsfiddle.net": {
+    "pack": "si",
+    "iconName": "SiJsfiddle",
+    "color": "#0084ff"
+  },
+  "kaggle.com": {
+    "pack": "si",
+    "iconName": "SiKaggle",
+    "color": "#20beff"
+  },
+  "khanacademy.org": {
+    "pack": "si",
+    "iconName": "SiKhanacademy",
+    "color": "#14bf96"
+  },
+  "kraken.com": {
+    "pack": "si",
+    "iconName": "SiKraken",
+    "color": "#5741d9"
+  },
+  "kubernetes.io": {
+    "pack": "si",
+    "iconName": "SiKubernetes",
+    "color": "#326ce5"
+  },
+  "last.fm": {
+    "pack": "si",
+    "iconName": "SiLastdotfm",
+    "color": "#d51007"
+  },
+  "leetcode.com": {
+    "pack": "si",
+    "iconName": "SiLeetcode",
+    "color": "#ffa116"
+  },
+  "linear.app": {
+    "pack": "si",
+    "iconName": "SiLinear",
+    "color": "#5e6ad2"
+  },
+  "linkedin.com": {
+    "pack": "fa6",
+    "iconName": "FaLinkedinIn",
+    "color": "#0a66c2"
+  },
+  "linux.org": {
+    "pack": "si",
+    "iconName": "SiLinux",
+    "color": "#fcc624"
+  },
+  "linuxmint.com": {
+    "pack": "si",
+    "iconName": "SiLinuxmint",
+    "color": "#87cf3e"
+  },
+  "lyft.com": {
+    "pack": "si",
+    "iconName": "SiLyft",
+    "color": "#ff00bf"
+  },
+  "mail.google.com": {
+    "pack": "si",
+    "iconName": "SiGmail",
+    "color": "#ea4335"
+  },
+  "manjaro.org": {
+    "pack": "si",
+    "iconName": "SiManjaro",
+    "color": "#35bf5c"
+  },
+  "maps.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglemaps",
+    "color": "#4285f4"
+  },
+  "mastodon.social": {
+    "pack": "si",
+    "iconName": "SiMastodon",
+    "color": "#6364ff"
+  },
+  "medium.com": {
+    "pack": "fa6",
+    "iconName": "FaMedium",
+    "color": "#000000"
+  },
+  "meet.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglemeet",
+    "color": "#00897b"
+  },
+  "mega.nz": {
+    "pack": "si",
+    "iconName": "SiMega",
+    "color": "#d90007"
+  },
+  "microsoft.com": {
+    "pack": "fa6",
+    "iconName": "FaMicrosoft",
+    "color": "#00a4ef"
+  },
+  "midjourney.com": {
+    "pack": "si",
+    "iconName": "SiMidjourney",
+    "color": "#000000"
+  },
+  "minecraft.net": {
+    "pack": "si",
+    "iconName": "SiMinecraft",
+    "color": "#62b47a"
+  },
+  "miro.com": {
+    "pack": "si",
+    "iconName": "SiMiro",
+    "color": "#ffd02f"
+  },
+  "monday.com": {
+    "pack": "si",
+    "iconName": "SiMonday",
+    "color": "#ff3d57"
+  },
+  "mongodb.com": {
+    "pack": "si",
+    "iconName": "SiMongodb",
+    "color": "#47a248"
+  },
+  "music.163.com": {
+    "pack": "si",
+    "iconName": "SiNeteasecloudmusic",
+    "color": "#c20c0c"
+  },
+  "music.apple.com": {
+    "pack": "si",
+    "iconName": "SiApplemusic",
+    "color": "#fa243c"
+  },
+  "music.youtube.com": {
+    "pack": "si",
+    "iconName": "SiYoutubemusic",
+    "color": "#ff0000"
+  },
+  "netflix.com": {
+    "pack": "si",
+    "iconName": "SiNetflix",
+    "color": "#e50914"
+  },
+  "netlify.com": {
+    "pack": "si",
+    "iconName": "SiNetlify",
+    "color": "#00c7b7"
+  },
+  "news.ycombinator.com": {
+    "pack": "fa6",
+    "iconName": "FaHackerNews",
+    "color": "#ff6600"
+  },
+  "nintendo.com": {
+    "pack": "si",
+    "iconName": "SiNintendo",
+    "color": "#e60012"
+  },
+  "notion.com": {
+    "pack": "si",
+    "iconName": "SiNotion",
+    "color": "#000000"
+  },
+  "notion.so": {
+    "pack": "si",
+    "iconName": "SiNotion",
+    "color": "#000000"
+  },
+  "npm.com": {
+    "pack": "fa6",
+    "iconName": "FaNpm",
+    "color": "#cb3837"
+  },
+  "npmjs.com": {
+    "pack": "fa6",
+    "iconName": "FaNpm",
+    "color": "#cb3837"
+  },
+  "nvidia.com": {
+    "pack": "si",
+    "iconName": "SiNvidia",
+    "color": "#76b900"
+  },
+  "nytimes.com": {
+    "pack": "si",
+    "iconName": "SiNewyorktimes",
+    "color": "#000000"
+  },
+  "obsidian.md": {
+    "pack": "si",
+    "iconName": "SiObsidian",
+    "color": "#7c3aed"
+  },
+  "onedrive.live.com": {
+    "pack": "si",
+    "iconName": "SiOnedrive",
+    "color": "#0078d4"
+  },
+  "open.spotify.com": {
+    "pack": "fa6",
+    "iconName": "FaSpotify",
+    "color": "#1db954"
+  },
+  "openai.com": {
+    "pack": "si",
+    "iconName": "SiOpenai",
+    "color": "#412991"
+  },
+  "opensuse.org": {
+    "pack": "si",
+    "iconName": "SiOpensuse",
+    "color": "#73ba25"
+  },
+  "oracle.com": {
+    "pack": "si",
+    "iconName": "SiOracle",
+    "color": "#f80000"
+  },
+  "paypal.com": {
+    "pack": "fa6",
+    "iconName": "FaPaypal",
+    "color": "#003087"
+  },
+  "perplexity.ai": {
+    "pack": "si",
+    "iconName": "SiPerplexity",
+    "color": "#1fb8cd"
+  },
+  "photos.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglephotos",
+    "color": "#4285f4"
+  },
+  "pinterest.com": {
+    "pack": "fa6",
+    "iconName": "FaPinterestP",
+    "color": "#bd081c"
+  },
+  "play.google.com": {
+    "pack": "si",
+    "iconName": "SiGoogleplay",
+    "color": "#414141"
+  },
+  "playstation.com": {
+    "pack": "fa6",
+    "iconName": "FaPlaystation",
+    "color": "#003791"
+  },
+  "pluralsight.com": {
+    "pack": "si",
+    "iconName": "SiPluralsight",
+    "color": "#ec008c"
+  },
+  "poe.com": {
+    "pack": "si",
+    "iconName": "SiPoe",
+    "color": "#5c46f5"
+  },
+  "postgresql.org": {
+    "pack": "si",
+    "iconName": "SiPostgresql",
+    "color": "#4169e1"
+  },
+  "primevideo.com": {
+    "pack": "si",
+    "iconName": "SiPrimevideo",
+    "color": "#00a8e1"
+  },
+  "producthunt.com": {
+    "pack": "si",
+    "iconName": "SiProducthunt",
+    "color": "#da552f"
+  },
+  "qq.com": {
+    "pack": "si",
+    "iconName": "SiTencentqq",
+    "color": "#eb1923"
+  },
+  "railway.app": {
+    "pack": "si",
+    "iconName": "SiRailway",
+    "color": "#0b0d0e"
+  },
+  "reddit.com": {
+    "pack": "fa6",
+    "iconName": "FaRedditAlien",
+    "color": "#ff4500"
+  },
+  "redhat.com": {
+    "pack": "si",
+    "iconName": "SiRedhat",
+    "color": "#ee0000"
+  },
+  "redis.io": {
+    "pack": "si",
+    "iconName": "SiRedis",
+    "color": "#dc382d"
+  },
+  "replit.com": {
+    "pack": "si",
+    "iconName": "SiReplit",
+    "color": "#f26207"
+  },
+  "reuters.com": {
+    "pack": "si",
+    "iconName": "SiReuters",
+    "color": "#ff8000"
+  },
+  "revolut.com": {
+    "pack": "si",
+    "iconName": "SiRevolut",
+    "color": "#0075eb"
+  },
+  "robinhood.com": {
+    "pack": "si",
+    "iconName": "SiRobinhood",
+    "color": "#00c805"
+  },
+  "roblox.com": {
+    "pack": "si",
+    "iconName": "SiRoblox",
+    "color": "#000000"
+  },
+  "rottentomatoes.com": {
+    "pack": "si",
+    "iconName": "SiRottentomatoes",
+    "color": "#fa320a"
+  },
+  "salesforce.com": {
+    "pack": "si",
+    "iconName": "SiSalesforce",
+    "color": "#00a1e0"
+  },
+  "sheets.google.com": {
+    "pack": "si",
+    "iconName": "SiGooglesheets",
+    "color": "#34a853"
+  },
+  "shopify.com": {
+    "pack": "si",
+    "iconName": "SiShopify",
+    "color": "#7ab55c"
+  },
+  "signal.org": {
+    "pack": "si",
+    "iconName": "SiSignal",
+    "color": "#3a76f0"
+  },
+  "sketch.com": {
+    "pack": "si",
+    "iconName": "SiSketch",
+    "color": "#f7b500"
+  },
+  "skillshare.com": {
+    "pack": "si",
+    "iconName": "SiSkillshare",
+    "color": "#00ff84"
+  },
+  "skype.com": {
+    "pack": "fa6",
+    "iconName": "FaSkype",
+    "color": "#00aff0"
+  },
+  "slack.com": {
+    "pack": "fa6",
+    "iconName": "FaSlack",
+    "color": "#4a154b"
+  },
+  "slides.google.com": {
+    "pack": "si",
+    "iconName": "SiGoogleslides",
+    "color": "#fbbc04"
+  },
+  "snapchat.com": {
+    "pack": "fa6",
+    "iconName": "FaSnapchat",
+    "color": "#fffc00"
+  },
+  "soundcloud.com": {
+    "pack": "fa6",
+    "iconName": "FaSoundcloud",
+    "color": "#ff5500"
+  },
+  "spotify.com": {
+    "pack": "fa6",
+    "iconName": "FaSpotify",
+    "color": "#1db954"
+  },
+  "stability.ai": {
+    "pack": "si",
+    "iconName": "SiStabilityai",
+    "color": "#000000"
+  },
+  "stackoverflow.com": {
+    "pack": "fa6",
+    "iconName": "FaStackOverflow",
+    "color": "#f58025"
+  },
+  "steam.com": {
+    "pack": "fa6",
+    "iconName": "FaSteam",
+    "color": "#000000"
+  },
+  "store.steampowered.com": {
+    "pack": "fa6",
+    "iconName": "FaSteam",
+    "color": "#000000"
+  },
+  "stripe.com": {
+    "pack": "fa6",
+    "iconName": "FaStripe",
+    "color": "#635bff"
+  },
+  "substack.com": {
+    "pack": "si",
+    "iconName": "SiSubstack",
+    "color": "#ff6719"
+  },
+  "supabase.com": {
+    "pack": "si",
+    "iconName": "SiSupabase",
+    "color": "#3ecf8e"
+  },
+  "taobao.com": {
+    "pack": "si",
+    "iconName": "SiTaobao",
+    "color": "#ff6a00"
+  },
+  "target.com": {
+    "pack": "si",
+    "iconName": "SiTarget",
+    "color": "#cc0000"
+  },
+  "teams.microsoft.com": {
+    "pack": "si",
+    "iconName": "SiMicrosoftteams",
+    "color": "#6264a7"
+  },
+  "techcrunch.com": {
+    "pack": "si",
+    "iconName": "SiTechcrunch",
+    "color": "#029e74"
+  },
+  "telegram.org": {
+    "pack": "fa6",
+    "iconName": "FaTelegram",
+    "color": "#26a5e4"
+  },
+  "tencent.com": {
+    "pack": "si",
+    "iconName": "SiTencent",
+    "color": "#0052d9"
+  },
+  "theguardian.com": {
+    "pack": "si",
+    "iconName": "SiTheguardian",
+    "color": "#052962"
+  },
+  "theverge.com": {
+    "pack": "si",
+    "iconName": "SiTheverge",
+    "color": "#000000"
+  },
+  "threads.net": {
+    "pack": "si",
+    "iconName": "SiThreads",
+    "color": "#000000"
+  },
+  "tidal.com": {
+    "pack": "si",
+    "iconName": "SiTidal",
+    "color": "#000000"
+  },
+  "tiktok.com": {
+    "pack": "fa6",
+    "iconName": "FaTiktok",
+    "color": "#000000"
+  },
+  "todoist.com": {
+    "pack": "si",
+    "iconName": "SiTodoist",
+    "color": "#e44332"
+  },
+  "translate.google.com": {
+    "pack": "si",
+    "iconName": "SiGoogletranslate",
+    "color": "#4285f4"
+  },
+  "trello.com": {
+    "pack": "fa6",
+    "iconName": "FaTrello",
+    "color": "#0052cc"
+  },
+  "tripadvisor.com": {
+    "pack": "si",
+    "iconName": "SiTripadvisor",
+    "color": "#34e0a1"
+  },
+  "tumblr.com": {
+    "pack": "fa6",
+    "iconName": "FaTumblr",
+    "color": "#36465d"
+  },
+  "twitch.tv": {
+    "pack": "fa6",
+    "iconName": "FaTwitch",
+    "color": "#9146ff"
+  },
+  "twitter.com": {
+    "pack": "fa6",
+    "iconName": "FaXTwitter",
+    "color": "#1da1f2"
+  },
+  "uber.com": {
+    "pack": "si",
+    "iconName": "SiUber",
+    "color": "#000000"
+  },
+  "ubisoft.com": {
+    "pack": "si",
+    "iconName": "SiUbisoft",
+    "color": "#000000"
+  },
+  "ubuntu.com": {
+    "pack": "si",
+    "iconName": "SiUbuntu",
+    "color": "#e95420"
+  },
+  "udemy.com": {
+    "pack": "si",
+    "iconName": "SiUdemy",
+    "color": "#a435f0"
+  },
+  "v2ex.com": {
+    "pack": "si",
+    "iconName": "SiV2Ex",
+    "color": "#1f73b7"
+  },
+  "vercel.com": {
+    "pack": "si",
+    "iconName": "SiVercel",
+    "color": "#000000"
+  },
+  "vimeo.com": {
+    "pack": "fa6",
+    "iconName": "FaVimeoV",
+    "color": "#1ab7ea"
+  },
+  "walmart.com": {
+    "pack": "si",
+    "iconName": "SiWalmart",
+    "color": "#0071dc"
+  },
+  "web.telegram.org": {
+    "pack": "fa6",
+    "iconName": "FaTelegram",
+    "color": "#26a5e4"
+  },
+  "web.whatsapp.com": {
+    "pack": "fa6",
+    "iconName": "FaWhatsapp",
+    "color": "#25d366"
+  },
+  "wechat.com": {
+    "pack": "si",
+    "iconName": "SiWechat",
+    "color": "#07c160"
+  },
+  "weibo.com": {
+    "pack": "si",
+    "iconName": "SiSinaweibo",
+    "color": "#e6162d"
+  },
+  "weixin.qq.com": {
+    "pack": "si",
+    "iconName": "SiWechat",
+    "color": "#07c160"
+  },
+  "whatsapp.com": {
+    "pack": "fa6",
+    "iconName": "FaWhatsapp",
+    "color": "#25d366"
+  },
+  "wikipedia.org": {
+    "pack": "fa6",
+    "iconName": "FaWikipediaW",
+    "color": "#000000"
+  },
+  "wired.com": {
+    "pack": "si",
+    "iconName": "SiWired",
+    "color": "#000000"
+  },
+  "wise.com": {
+    "pack": "si",
+    "iconName": "SiWise",
+    "color": "#9fe870"
+  },
+  "x.com": {
+    "pack": "fa6",
+    "iconName": "FaXTwitter",
+    "color": "#1da1f2"
+  },
+  "xbox.com": {
+    "pack": "fa6",
+    "iconName": "FaXbox",
+    "color": "#107c10"
+  },
+  "xiaohongshu.com": {
+    "pack": "si",
+    "iconName": "SiXiaohongshu",
+    "color": "#ff2442"
+  },
+  "yandex.com": {
+    "pack": "si",
+    "iconName": "SiYandex",
+    "color": "#ff0000"
+  },
+  "yelp.com": {
+    "pack": "si",
+    "iconName": "SiYelp",
+    "color": "#d32323"
+  },
+  "youku.com": {
+    "pack": "si",
+    "iconName": "SiYouku",
+    "color": "#1e90ff"
+  },
+  "youtube.com": {
+    "pack": "fa6",
+    "iconName": "FaYoutube",
+    "color": "#ff0000"
+  },
+  "zeplin.io": {
+    "pack": "si",
+    "iconName": "SiZeplin",
+    "color": "#fdbd39"
+  },
+  "zhihu.com": {
+    "pack": "si",
+    "iconName": "SiZhihu",
+    "color": "#0084ff"
+  },
+  "zoom.us": {
+    "pack": "si",
+    "iconName": "SiZoom",
+    "color": "#2d8cff"
+  },
+  "huya.com": {
+    "pack": "custom",
+    "iconName": "SiHuya",
+    "color": "#ffa900"
+  },
+  "ithome.com": {
+    "pack": "custom",
+    "iconName": "SiIthome",
+    "color": "#d22322"
+  },
+  "linux.do": {
+    "pack": "custom",
+    "iconName": "SiLinuxdo",
+    "color": "#ffb003"
+  },
+  "mikanani.me": {
+    "pack": "custom",
+    "iconName": "SiMikanani",
+    "color": "#fda143"
+  },
+  "tophub.today": {
+    "pack": "custom",
+    "iconName": "SiTophub",
+    "color": "#ff5722"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "neu-tab",
+  "displayName": "NeuTab",
+  "version": "1.0.0",
+  "description": "Beautiful neumorphic browser homepage with search and quick launch",
+  "author": "NeuTab Contributors",
+  "scripts": {
+    "postinstall": "node ./scripts/patch-plasmo-templates.mjs",
+    "dev": "plasmo dev",
+    "dev:firefox": "node node_modules/plasmo/bin/index.mjs dev --target=firefox-mv3",
+    "build": "plasmo build && node ./scripts/patch-build-html-paths.mjs",
+    "build:firefox": "node node_modules/plasmo/bin/index.mjs build --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs",
+    "package": "plasmo package && node ./scripts/patch-build-html-paths.mjs && node ./scripts/sync-build-dev.mjs",
+    "package:firefox": "node node_modules/plasmo/bin/index.mjs package --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.0.8",
+    "@dnd-kit/sortable": "^7.0.2",
+    "@dnd-kit/utilities": "^3.2.1",
+    "@plasmohq/storage": "^1.9.0",
+    "lz-string": "^1.5.0",
+    "plasmo": "0.88.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-icons": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.258",
+    "@types/node": "20.11.5",
+    "@types/react": "18.2.48",
+    "@types/react-dom": "18.2.18",
+    "typescript": "5.3.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "less",
+      "lmdb",
+      "msgpackr-extract",
+      "sharp"
+    ]
+  },
+  "manifest": {
+    "name": "__MSG_extensionName__",
+    "description": "__MSG_extensionDescription__",
+    "default_locale": "en",
+    "host_permissions": [],
+    "permissions": [
+      "storage",
+      "favicon",
+      "bookmarks",
+      "topSites",
+      "history"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+/**
+ * @file Header.css
+ * @description 顶部页眉布局样式，作为时钟等信息的容器。
+ */
+
+/* 1. 顶部信息 */
+.header {
+  /* margin-top: 0; 让 顶部设置 控制实际边距 */
+  margin-bottom: 20px;
+  /* 保持最小高度，防止内容未加载时容器塌陷导致下方内容跳动 */
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--txt-primary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 500px) {
+  .clock {
+    font-size: 3rem;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 360px) {
+  .clock {
+    font-size: 2.5rem;
+  }
+}

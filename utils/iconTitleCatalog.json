@@ -1,0 +1,227 @@
+{
+  "pve": {
+    "pack": "si",
+    "iconName": "SiProxmox",
+    "color": "#e57000"
+  },
+  "proxmox": {
+    "pack": "si",
+    "iconName": "SiProxmox",
+    "color": "#e57000"
+  },
+  "bt": {
+    "pack": "si",
+    "iconName": "SiQbittorrent",
+    "color": "#2f67ba"
+  },
+  "qbittorrent": {
+    "pack": "si",
+    "iconName": "SiQbittorrent",
+    "color": "#2f67ba"
+  },
+  "qbit": {
+    "pack": "si",
+    "iconName": "SiQbittorrent",
+    "color": "#2f67ba"
+  },
+  "cloudflare": {
+    "pack": "si",
+    "iconName": "SiCloudflare",
+    "color": "#f38020"
+  },
+  "dsm": {
+    "pack": "si",
+    "iconName": "SiSynology",
+    "color": "#b5b5b6"
+  },
+  "synology": {
+    "pack": "si",
+    "iconName": "SiSynology",
+    "color": "#b5b5b6"
+  },
+  "nas": {
+    "pack": "si",
+    "iconName": "SiSynology",
+    "color": "#b5b5b6"
+  },
+  "群晖": {
+    "pack": "si",
+    "iconName": "SiSynology",
+    "color": "#b5b5b6"
+  },
+  "freshrss": {
+    "pack": "custom",
+    "iconName": "SiFreshrss",
+    "color": "#0061be"
+  },
+  "rss": {
+    "pack": "si",
+    "iconName": "SiRss",
+    "color": "#ff6600"
+  },
+  "trilium": {
+    "pack": "custom",
+    "iconName": "SiTrilium",
+    "color": "#6eaa5e"
+  },
+  "uptime": {
+    "pack": "si",
+    "iconName": "SiUptimekuma",
+    "color": "#5cdd8b"
+  },
+  "uptimekuma": {
+    "pack": "si",
+    "iconName": "SiUptimekuma",
+    "color": "#5cdd8b"
+  },
+  "uptime kuma": {
+    "pack": "si",
+    "iconName": "SiUptimekuma",
+    "color": "#5cdd8b"
+  },
+  "1panel": {
+    "pack": "custom",
+    "iconName": "Si1panel",
+    "color": "#005eeb"
+  },
+  "adg": {
+    "pack": "custom",
+    "iconName": "SiAdguardhome",
+    "color": "#68bc71"
+  },
+  "adguard": {
+    "pack": "custom",
+    "iconName": "SiAdguardhome",
+    "color": "#68bc71"
+  },
+  "adguardhome": {
+    "pack": "custom",
+    "iconName": "SiAdguardhome",
+    "color": "#68bc71"
+  },
+  "hexo": {
+    "pack": "custom",
+    "iconName": "SiHexo",
+    "color": "#0e83cd"
+  },
+  "huya": {
+    "pack": "custom",
+    "iconName": "SiHuya",
+    "color": "#ffa900"
+  },
+  "虎牙": {
+    "pack": "custom",
+    "iconName": "SiHuya",
+    "color": "#ffa900"
+  },
+  "ithome": {
+    "pack": "custom",
+    "iconName": "SiIthome",
+    "color": "#d22322"
+  },
+  "it之家": {
+    "pack": "custom",
+    "iconName": "SiIthome",
+    "color": "#d22322"
+  },
+  "ittools": {
+    "pack": "custom",
+    "iconName": "SiIttools",
+    "color": "#10b981"
+  },
+  "it tools": {
+    "pack": "custom",
+    "iconName": "SiIttools",
+    "color": "#10b981"
+  },
+  "jellyfin": {
+    "pack": "custom",
+    "iconName": "SiJellyfin",
+    "color": "#00a4dc"
+  },
+  "linuxdo": {
+    "pack": "custom",
+    "iconName": "SiLinuxdo",
+    "color": "#ffb003"
+  },
+  "linux do": {
+    "pack": "custom",
+    "iconName": "SiLinuxdo",
+    "color": "#ffb003"
+  },
+  "mail": {
+    "pack": "custom",
+    "iconName": "SiMail",
+    "color": "#ea4335"
+  },
+  "邮箱": {
+    "pack": "custom",
+    "iconName": "SiMail",
+    "color": "#ea4335"
+  },
+  "markdown": {
+    "pack": "custom",
+    "iconName": "SiMarkdown",
+    "color": "#737373"
+  },
+  "mikan": {
+    "pack": "custom",
+    "iconName": "SiMikanani",
+    "color": "#fda143"
+  },
+  "蜜柑": {
+    "pack": "custom",
+    "iconName": "SiMikanani",
+    "color": "#fda143"
+  },
+  "tophub": {
+    "pack": "custom",
+    "iconName": "SiTophub",
+    "color": "#ff5722"
+  },
+  "今日热榜": {
+    "pack": "custom",
+    "iconName": "SiTophub",
+    "color": "#ff5722"
+  },
+  "图床": {
+    "pack": "custom",
+    "iconName": "SiCloudimages",
+    "color": "#3498db"
+  },
+  "阅读": {
+    "pack": "custom",
+    "iconName": "SiReader",
+    "color": "#0084ff"
+  },
+  "雷池": {
+    "pack": "custom",
+    "iconName": "SiSafeline",
+    "color": "#79ba49"
+  },
+  "safeline": {
+    "pack": "custom",
+    "iconName": "SiSafeline",
+    "color": "#79ba49"
+  },
+  "waf": {
+    "pack": "custom",
+    "iconName": "SiSafeline",
+    "color": "#79ba49"
+  },
+  "nastool": {
+    "pack": "custom",
+    "iconName": "SiNastool",
+    "color": "#2196f3"
+  },
+  "nas-tools": {
+    "pack": "custom",
+    "iconName": "SiNastool",
+    "color": "#2196f3"
+  },
+  "nas tool": {
+    "pack": "custom",
+    "iconName": "SiNastool",
+    "color": "#2196f3"
+  }
+}

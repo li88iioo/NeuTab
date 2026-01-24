@@ -1,0 +1,33 @@
+/**
+ * @file LetterAvatar.css
+ * @description 字母头像样式，用于在缺少图标时通过名称首字母生成占位图。
+ * 尺寸随卡片缩放动态调整。
+ */
+
+.letter-avatar {
+  /* 基础字体大小 1.8rem，随卡片缩放 */
+  font-size: calc(1.8rem * var(--grid-card-scale, var(--card-scale, 1)));
+  font-weight: 800;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 基础尺寸 32px，随卡片缩放 */
+  height: calc(32px * var(--grid-card-scale, var(--card-scale, 1)));
+  width: calc(32px * var(--grid-card-scale, var(--card-scale, 1)));
+  /* 最小尺寸限制 */
+  min-height: 18px;
+  min-width: 18px;
+  transition: all 0.2s ease;
+}
+
+/* 提示：悬停时的位移动画通常由父级 .app-card 统一处理，以保证视觉上的一致性 */
+
+/* 响应式调整：移动端缩小字母尺寸和容器大小 */
+@media (max-width: 500px) {
+  .letter-avatar {
+    font-size: calc(1.5rem * var(--grid-card-scale, var(--card-scale, 1)));
+    height: calc(28px * var(--grid-card-scale, var(--card-scale, 1)));
+    width: calc(28px * var(--grid-card-scale, var(--card-scale, 1)));
+  }
+}

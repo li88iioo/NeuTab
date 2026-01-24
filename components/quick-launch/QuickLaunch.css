@@ -1,0 +1,904 @@
+/**
+ * @file QuickLaunch.css
+ * @description 快捷启动容器及分组网格样式。
+ * 
+ * 核心设计：
+ * 1. 分组管理：支持多分组展示，每个分组有独立的标题和添加按钮。
+ * 2. 响应式网格：使用 inline-grid 配合动态列数计算，实现居中对齐且不溢出的磁贴布局。
+ * 3. 交互细节：分组悬停显示添加按钮，支持各种窄屏适配。
+ */
+
+/* 3. 应用网格 */
+.quick-launch {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ql-group {
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.ql-group-inner {
+  display: inline-block;
+  text-align: left;
+  max-width: 100%;
+}
+
+.ql-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.ql-group-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+  text-align: left;
+}
+
+.ql-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--txt-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+  box-shadow:
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+}
+
+.ql-group-header:hover .ql-add-btn {
+  opacity: 1;
+}
+
+.ql-add-btn:hover {
+  color: var(--txt-primary);
+  background: var(--bg);
+  box-shadow:
+    inset 2px 2px 4px var(--shadow-dark),
+    inset -2px -2px 4px var(--shadow-light);
+}
+
+/* 网格布局：使用 inline-grid 以便在容器发生宽度变化时（如设置面板打开）保持水平居中 */
+.app-grid {
+  display: inline-grid;
+  gap: var(--grid-card-gap, var(--card-gap, 24px));
+  justify-items: center;
+  max-width: 100%;
+  /* 确保网格在 inline-block 父容器内居中 */
+  justify-content: center;
+  /* 允许拖拽阴影或悬浮效果溢出 */
+  overflow: visible;
+}
+
+/* Empty group hint */
+.ql-empty-hint {
+  grid-column: 1 / -1;
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ql-empty-hint-text {
+  color: var(--txt-secondary);
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+/* 窄屏调整 */
+@media (max-width: 500px) {
+  .app-grid {
+    gap: var(--grid-card-gap, var(--card-gap, 18px));
+  }
+
+  .ql-group-inner {
+    /* 确保在小屏幕上不会溢出 */
+    max-width: 100%;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-grid {
+    gap: var(--grid-card-gap, var(--card-gap, 12px));
+  }
+
+  .ql-group {
+    /* 减小分组间距 */
+    margin-bottom: 24px;
+  }
+}
+
+/* 磁贴卡片：核心交互组件 */
+.app-card {
+  width: var(--grid-card-size, var(--card-size, 110px));
+  height: var(--grid-card-size, var(--card-size, 110px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--txt-primary);
+  position: relative;
+  border: none;
+  background: var(--bg);
+  /* 强制应用 CSS 变量中的圆角，用于实时预览 */
+  border-radius: var(--card-radius, 20%) !important;
+  overflow: hidden;
+  /* 基础性能优化与无障碍属性 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+/* Disable hover "lift" animation for website cards (mouse hover). */
+@media (hover: hover) and (pointer: fine) {
+
+  /* Important: don't override `:active` (pressed) state, otherwise the inset shadow won't show. */
+  .app-card.soft-out:hover:not(:active) {
+    transform: none;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+      calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+    will-change: auto;
+  }
+}
+
+/* 键盘焦点样式 */
+/* 键盘焦点样式 */
+.app-card:focus,
+.app-card:focus-within {
+  outline: none;
+  box-shadow:
+    8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light),
+    0 0 0 3px var(--accent);
+}
+
+/* 当非键盘交互（如鼠标点击）时不显示焦点环，包括内部元素 */
+.app-card:focus:not(:focus-visible),
+.app-card:focus-within:not(:has(:focus-visible)) {
+  box-shadow:
+    8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light);
+}
+
+/* 隐藏内部内容区域的默认焦点环，交由外层 .app-card:focus-within 统一展示 */
+.app-card-content:focus {
+  outline: none;
+}
+
+.app-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: calc(var(--grid-card-size, var(--card-size, 110px)) * 0.1);
+  padding: calc(var(--grid-card-size, var(--card-size, 110px)) * 0.1);
+}
+
+.app-icon {
+  transition: transform 0.2s ease;
+  /* 图标尺寸现在通过 SmartIcon.css 和 LetterAvatar.css 中的 CSS 变量动态计算 */
+  transform-origin: center;
+}
+
+
+
+.app-name {
+  /* 优化字体大小计算：基础 0.65rem + 卡片尺寸的 6%，确保小尺寸下仍可读 */
+  font-size: clamp(0.6rem, calc(var(--grid-card-size, var(--card-size, 110px)) * 0.06 + 0.35rem), 1rem);
+  font-weight: 700;
+  color: var(--txt-secondary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 最大宽度随卡片缩放 */
+  max-width: calc(var(--grid-card-size, var(--card-size, 110px)) * 0.85);
+  line-height: 1.2;
+  /* 防止文本选择 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* 防止长按弹出菜单 */
+  -webkit-touch-callout: none;
+}
+
+.add-card {
+  opacity: 0.6;
+}
+
+/* 快捷启动添加/编辑预览弹窗覆盖层 */
+.ql-add-app-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  /* 预留安全边距，防止在极小视口下触顶/触底 */
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.ql-modal-content {
+  padding: 30px;
+  /* Prevent the modal from "growing" based on content (e.g. Text icon style row).
+     Keep a stable width and let inner layout wrap/shrink as needed. */
+  width: min(360px, 40vw);
+  max-width: 92vw;
+  min-width: 320px;
+  box-sizing: border-box;
+  /* Make the modal itself scrollable on short/compact viewports, so wheel scroll doesn't "fall through" to the page. */
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* prevent scroll chaining to the underlying page */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* legacy Edge/IE */
+}
+
+.ql-modal-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Modal should not "lift" on hover in neumorphic mode (it causes cursor jitter). */
+body:not(.liquid-glass) .ql-modal-content.soft-out:hover:not(:active),
+body:not(.liquid-glass) .ql-modal-content .soft-out:hover:not(:active) {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+  will-change: auto;
+}
+
+/* Disable click/press animation on modal to prevent jitter when clicking inside. */
+body:not(.liquid-glass) .ql-modal-content.soft-out:active,
+body:not(.liquid-glass) .ql-modal-content .soft-out:active {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+}
+
+/* Disable hover animations for all interactive elements inside modal to prevent jitter. */
+body:not(.liquid-glass) .ql-modal-content .ql-icon-style-selector .style-option:hover,
+body:not(.liquid-glass) .ql-modal-content .ql-custom-select:hover,
+body:not(.liquid-glass) .ql-modal-content .ql-color-circle:hover,
+body:not(.liquid-glass) .ql-modal-content .ql-modal-btn:hover {
+  transform: none;
+}
+
+/* Keep icon action buttons stable (no hover translate) inside the modal. */
+body:not(.liquid-glass) .ql-modal-content .ql-icon-action-btn:hover {
+  transform: none;
+}
+
+.ql-modal-content h3 {
+  margin-bottom: 20px;
+  color: var(--txt-primary);
+}
+
+.ql-modal-input {
+  width: 100%;
+  padding: 14px 20px;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+/* Custom Select Styles */
+/* 自定义下拉选择框 (Custom Select)：为了在不同浏览器上保持一致的新拟态视觉 */
+.ql-custom-select {
+  width: 100%;
+  padding: 12px 16px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  font-family: inherit;
+  /* 圆角半径需与 .soft-in 风格对齐 */
+  border-radius: 50px;
+}
+
+.ql-select-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  /* anchor dropdown width to the select box */
+}
+
+.ql-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 8px;
+  list-style: none;
+  z-index: 100;
+  transform-origin: top;
+  animation: qlContextMenuFadeIn 0.2s ease;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ql-option {
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+  color: var(--txt-primary);
+}
+
+.ql-option:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--accent);
+}
+
+.ql-option.selected {
+  background: var(--bg);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+  color: var(--accent);
+}
+
+.select-arrow {
+  font-size: 0.7rem;
+  color: var(--txt-secondary);
+  transition: transform 0.2s;
+  margin-left: auto;
+  /* keep the dropdown arrow on the right */
+}
+
+/* Deprecated select styles used as base if needed, but overridden above */
+.ql-modal-select {
+  display: none;
+  /* Hide original if still present for some reason */
+}
+
+.ql-modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ql-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  cursor: pointer;
+  color: var(--txt-primary);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.url-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  padding-left: 5px;
+}
+
+.url-hint {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  padding-left: 5px;
+}
+
+/* 右键菜单 */
+/* 右键上下文菜单 */
+.ql-context-menu {
+  position: fixed;
+  z-index: 2000;
+  background: var(--bg);
+  min-width: 150px;
+  border-radius: 12px;
+  padding: 8px;
+  /* 增强悬浮感阴影 */
+  box-shadow: 8px 8px 20px var(--shadow-dark),
+    -1px -1px 20px var(--shadow-light);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* 使用弹性各样贝塞尔曲线实现类似原生的弹出动效 */
+  animation: qlContextMenuFadeIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ql-menu-item {
+  padding: 10px 14px;
+  /* Reduced horizontal padding */
+  cursor: pointer;
+  border-radius: 8px;
+  /* Tighter radius */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.ql-menu-item:hover {
+  background: var(--bg);
+  /* Soft-in (Pressed) Effect - Matches the 'pressed in' description */
+  box-shadow: inset 5px 5px 10px var(--shadow-dark),
+    inset -5px -5px 10px var(--shadow-light);
+  transform: translateY(1px);
+  color: var(--accent);
+}
+
+.ql-menu-item:active {
+  transform: translateY(2px);
+  box-shadow: inset 6px 6px 12px var(--shadow-dark),
+    inset -6px -6px 12px var(--shadow-light);
+}
+
+.ql-menu-item.delete:hover {
+  color: #e74c3c;
+  /* Specific soft-in for delete if needed, or stick to default */
+}
+
+@keyframes qlContextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Modal Redesign Styles */
+.ql-modal-field {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.ql-modal-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--txt-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding-left: 5px;
+}
+
+/* 颜色选择色板：用于文本图标的背景色快速切换 */
+.ql-color-swatches:not(.ql-color-swatches-inline) {
+  display: flex;
+  gap: 15px;
+  padding: 5px;
+  flex-wrap: wrap;
+}
+
+.ql-color-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.ql-color-circle.active {
+  transform: scale(0.95);
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ql-modal-btn.save {
+  color: var(--accent);
+}
+
+.ql-modal-btn.cancel {
+  color: var(--txt-secondary);
+}
+
+/* Icon Preview Section */
+.ql-preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 20px;
+  gap: 10px;
+}
+
+.ql-preview-card .preview-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 80px;
+}
+
+/* Top row: preview + name/group fields aligned with the preview height */
+.ql-modal-top-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.ql-modal-top-fields {
+  flex: 1;
+  min-width: 0;
+  height: 100px;
+  /* match .ql-preview-card */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ql-modal-top-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ql-inline-label {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  white-space: nowrap;
+}
+
+.ql-modal-input-inline {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  height: 42px;
+  padding: 0 16px;
+}
+
+.ql-custom-select-inline {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16px;
+  min-height: 42px;
+}
+
+@media (max-width: 500px) {
+  .ql-modal-content {
+    min-width: 0;
+    width: min(92vw, 520px);
+    max-width: 92vw;
+  }
+
+  /* Keep top row in one line (row) even on mobile as requested */
+  .ql-modal-top-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* Adjust preview size for mobile to fit */
+  .ql-preview-card {
+    width: 80px;
+    height: 80px;
+  }
+
+  .ql-modal-top-fields {
+    width: auto;
+    height: 80px;
+    /* match preview */
+    gap: 8px;
+  }
+
+  .ql-modal-input-inline,
+  .ql-custom-select-inline {
+    height: 36px;
+    font-size: 0.9rem;
+  }
+}
+
+
+/* Text icon style row: keep it compact and prevent overflow in narrow modals.
+   Use the combined selector so the generic `.ql-modal-row` rule can't override the gap. */
+.ql-modal-row.ql-text-icon-config {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.ql-text-icon-col {
+  /* Keep the left column compact so the Icon Color field can take the remaining width. */
+  flex: 0 0 108px;
+}
+
+.ql-text-color-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ql-modal-row.ql-text-icon-config .ql-modal-field label {
+  /* This row is very compact; remove the generic left padding so the labels
+     and pills align further left and don't waste horizontal space. */
+  padding-left: 0;
+}
+
+.ql-custom-text-input {
+  /* Short input: enough for ~3 Chinese chars (maxLength=2 in JS anyway). */
+  width: 72px;
+  margin: 0;
+}
+
+/* Keep color picker aligned to the same width as other inputs. */
+.ql-color-picker {
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 50px;
+  box-sizing: border-box;
+}
+
+.ql-color-swatches-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  padding: 0;
+  /* override .ql-color-swatches padding */
+  box-sizing: border-box;
+}
+
+.ql-color-swatches-inline .ql-color-circle {
+  width: 20px;
+  height: 20px;
+}
+
+.ql-color-swatches-inline .color-dot {
+  width: 10px;
+  height: 10px;
+}
+
+/* 图标类型切换器 (Icon Style Selector)：在 文本/图片/自动 模式间平滑切换 */
+.ql-icon-style-selector {
+  display: flex;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+  /* 使用内阴影实现“槽”的深坑效果 */
+  box-shadow: inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+}
+
+.ql-icon-style-selector .style-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--txt-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.ql-icon-style-selector .style-option:hover {
+  color: var(--txt-primary);
+}
+
+.ql-icon-style-selector .style-option.active {
+  background: var(--bg);
+  color: var(--accent);
+  box-shadow: 4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+}
+
+
+
+
+
+
+
+.ql-image-preview-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(108, 92, 231, 0.1);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ql-image-preview-hint .clear-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--txt-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.ql-image-preview-hint .clear-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #e74c3c;
+}
+
+/* Icon Preview Wrapper */
+.icon-preview-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-preview-wrapper.large {
+  width: 48px;
+  height: 48px;
+}
+
+.icon-preview-wrapper .preview-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Modal Grid Layout */
+.ql-modal-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ql-modal-col {
+  /* Let specific rows/columns control flex sizing; this prevents 50/50 columns
+     from forcing the Icon Color field to stay too narrow. */
+  min-width: 0;
+}
+
+.ql-modal-col .ql-modal-field {
+  margin-bottom: 0;
+}
+
+/* Compact Adjustments */
+.ql-icon-preview-section {
+  margin-bottom: 20px;
+}
+
+.ql-modal-content h3 {
+  margin-bottom: 20px;
+}
+
+.ql-modal-field {
+  margin-bottom: 16px;
+}
+
+.ql-modal-field label {
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.ql-image-options {
+  margin-bottom: 8px;
+}
+
+.ql-color-swatches:not(.ql-color-swatches-inline) {
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.ql-color-circle {
+  width: 32px;
+  height: 32px;
+}
+
+/* Unified Image Input */
+.ql-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ql-input-group .ql-modal-input {
+  flex: 1;
+  margin-bottom: 0;
+  /* Remove default margin */
+  height: 42px;
+  /* Match button height */
+  padding: 0 16px;
+  /* Adjust padding for vertical centering */
+}
+
+.ql-icon-action-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--txt-secondary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  /* Add soft-out style inheritance manually if needed, or rely on HTML class */
+}
+
+.ql-icon-action-btn:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.ql-icon-action-btn:active {
+  transform: translateY(0);
+}
+
+.ql-icon-action-btn.danger:hover {
+  color: #e74c3c;
+}

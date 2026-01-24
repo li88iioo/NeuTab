@@ -1,0 +1,536 @@
+/* Fonts: Local Variable Fonts */
+@font-face {
+  font-family: 'Outfit Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/Outfit-Variable.woff2") format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/Inter-Variable.woff2") format('woff2');
+}
+
+:root {
+  /* 经典的新拟态配色 (灰蓝调) */
+  --bg: #e0e5ec;
+  --txt-primary: #4a4a4a;
+  --txt-secondary: #8d97a5;
+
+  /* 阴影的核心：一亮一暗 */
+  --shadow-light: #ffffff;
+  --shadow-dark: #a3b1c6;
+
+  /* 强调色 */
+  --accent: #6c5ce7;
+
+  --content-max-width: 1600px;
+  --content-padding-x: 20px;
+  --content-padding-top: 20px;
+  --content-padding-bottom: 20px;
+
+  /* Mobile "immersive status bar" building blocks.
+     Requires `<meta name="viewport" content="..., viewport-fit=cover">` in HTML.
+     We keep background full-bleed, but pad *content* by safe-area insets. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Prefer dynamic viewport height on modern mobile browsers. */
+  --viewport-h: 100vh;
+
+  /* 动态阴影变量 - 默认值基于 110px 卡片 */
+  --shadow-offset: 8px;
+  --shadow-blur: 16px;
+  --shadow-offset-in: 6px;
+  --shadow-blur-in: 10px;
+
+  /* Page scrollbar (overlay-style).
+     Keep it subtle: visible enough to hint scrollability, but not the thick native bar. */
+  --scrollbar-size: 10px;
+  --scrollbar-inset: 3px;
+  /* visual padding inside the scrollbar track (thumb border thickness) */
+  --scrollbar-thumb: rgba(74, 74, 74, 0.18);
+  --scrollbar-thumb-hover: rgba(74, 74, 74, 0.32);
+  --scrollbar-thumb-active: rgba(74, 74, 74, 0.42);
+  /* Chromium/WebKit can use rich backgrounds on the thumb; Firefox will fall back to scrollbar-color. */
+  --scrollbar-thumb-bg: rgba(74, 74, 74, 0.18);
+  --scrollbar-thumb-bg-hover: rgba(74, 74, 74, 0.32);
+  --scrollbar-thumb-bg-active: rgba(74, 74, 74, 0.42);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --viewport-h: 100dvh;
+  }
+}
+
+/* Preload Visibility Control - 隐藏但保留高度，避免开关时布局塌陷 */
+body.hide-search-bar .search-bar-container,
+body.hide-search-bar .layout-section-search,
+body.init-hide-search .layout-section-search {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.hide-header .header,
+body.hide-header .layout-section-header,
+body.init-hide-header .layout-section-header {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* General Invisible Class (used by React logic) */
+.invisible-layout {
+  display: none !important;
+}
+
+/* Settings Auto-hide */
+.settings-fab.hide-idle {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+/* Hide while scrolling (same motion profile as idle; keep it predictable). */
+.settings-fab.hide-scroll {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+/* 深色模式变量 */
+body.dark {
+  --bg: #292d32;
+  --txt-primary: #e0e5ec;
+  --txt-secondary: #888888;
+  --shadow-light: #353b43;
+  --shadow-dark: #1e2125;
+
+  --scrollbar-size: 10px;
+  --scrollbar-inset: 3px;
+  --scrollbar-thumb: rgba(224, 229, 236, 0.16);
+  --scrollbar-thumb-hover: rgba(224, 229, 236, 0.28);
+  --scrollbar-thumb-active: rgba(224, 229, 236, 0.38);
+  --scrollbar-thumb-bg: rgba(224, 229, 236, 0.16);
+  --scrollbar-thumb-bg-hover: rgba(224, 229, 236, 0.28);
+  --scrollbar-thumb-bg-active: rgba(224, 229, 236, 0.38);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 全局禁用所有按钮和链接的默认轮廓和高亮 */
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+button:focus,
+button:active,
+a:focus,
+a:active {
+  outline: none !important;
+}
+
+/* Prevent layout thrashing animations on load */
+body.no-transition,
+body.no-transition * {
+  transition: none !important;
+  animation: none !important;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  min-height: var(--viewport-h);
+  overflow-x: hidden;
+  /* 禁止横向滚动 */
+  overscroll-behavior: none;
+  /* 禁止橡皮筋回弹效果 */
+  /* Overlay-like scrollbar for the page (theme-driven via CSS variables).
+     Note: Firefox supports only `scrollbar-color` (no hover states). */
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  /* Firefox */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg);
+  border-radius: 999px;
+  /* Create an "overlay" feel by shrinking the painted area without changing layout. */
+  border: var(--scrollbar-inset) solid transparent;
+  background-clip: content-box;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-bg-hover);
+}
+
+html::-webkit-scrollbar-thumb:active,
+body::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-bg-active);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--txt-primary);
+  font-family: 'Outfit Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  /* 确保定位准确 */
+  /* 主题切换平滑过渡 - 移除 background-color 以防止闪烁 */
+  transition: color 0.3s ease;
+}
+
+/* --- 核心拟态工具类 --- */
+
+/* 凸起效果 (Button / Card) */
+.soft-out {
+  background: var(--bg);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* 移除 all transition，只保留颜色和阴影过渡，防止尺寸变化时的动画 */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+}
+
+.soft-out:focus {
+  outline: none !important;
+}
+
+.soft-out:hover:not(.engine-menu):not(.settings-close):not(.settings-theme-btn):not(.settings-lang-btn):not(.settings-nav-btn):not(.settings-top-nav-btn):not(.app-card):not(.settings-fab):not(.ql-select-options):not(.language-select-options):not(.ql-context-menu):not(.search-suggestions):not(.settings-panel):not(.ql-modal-content):not(.search-modal-content) {
+  transform: translateY(-3px);
+  box-shadow: calc(var(--shadow-offset) * 1.25) calc(var(--shadow-offset) * 1.25) calc(var(--shadow-blur) * 1.25) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset) * 1.25) calc(-1 * var(--shadow-offset) * 1.25) calc(var(--shadow-blur) * 1.25) var(--shadow-light);
+  will-change: transform, box-shadow;
+}
+
+.soft-out:active {
+  transform: translateY(0);
+  box-shadow: inset var(--shadow-offset-in) var(--shadow-offset-in) var(--shadow-blur-in) var(--shadow-dark),
+    inset calc(-1 * var(--shadow-offset-in)) calc(-1 * var(--shadow-offset-in)) var(--shadow-blur-in) var(--shadow-light);
+  outline: none !important;
+}
+
+/* 禁用返回顶部按钮的 hover 动画，只保留点击凹陷效果 */
+.back-to-top.soft-out:hover:not(:active) {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+}
+
+/* 凹陷效果 (Input / Pressed State) */
+.soft-in {
+  background: var(--bg);
+  box-shadow: inset var(--shadow-offset-in) var(--shadow-offset-in) var(--shadow-blur-in) var(--shadow-dark),
+    inset calc(-1 * var(--shadow-offset-in)) calc(-1 * var(--shadow-offset-in)) var(--shadow-blur-in) var(--shadow-light);
+  border-radius: 50px;
+  border: none;
+  outline: none;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.soft-in:focus,
+.soft-in:focus-within {
+  outline: none !important;
+}
+
+/* --- 布局结构 --- */
+
+.main-container {
+  width: min(100vw, var(--content-max-width));
+  max-width: none;
+  /* Safe-area aware padding: keep background immersive, keep content readable. */
+  padding-top: calc(var(--content-padding-top) + var(--safe-top));
+  padding-right: calc(var(--content-padding-x) + var(--safe-right));
+  padding-bottom: calc(var(--content-padding-bottom) + var(--safe-bottom));
+  padding-left: calc(var(--content-padding-x) + var(--safe-left));
+  min-height: calc(var(--viewport-h) - var(--content-padding-top) - var(--safe-top) - var(--content-padding-bottom) - var(--safe-bottom));
+  text-align: center;
+  box-sizing: border-box;
+  margin: 0 auto;
+  /* 移除 overflow-x: hidden，改用 padding 预留阴影空间，避免截断 */
+  overflow: visible;
+  /* 主题切换时的平滑过渡 */
+  transition: background-color 0.3s ease;
+  /* CSS Containment: 隔离重排范围，提升性能 */
+  /* 注意：不使用 paint 以避免背景透明问题 */
+  contain: layout style;
+
+  /* Explicitly force transparency */
+  background-color: transparent;
+
+  /* Ensure content sits above z-index: 0 background pseudo-elements */
+  position: relative;
+  z-index: 1;
+}
+
+/* 内容加载状态 - 防止闪烁 */
+.main-container.content-loading {
+  /* 保持最小高度避免布局塌陷 */
+  min-height: var(--viewport-h);
+  /* Do not hard-hide content. Theme/layout are already restored synchronously. */
+  visibility: visible;
+}
+
+.main-container.content-loading>* {
+  opacity: 1;
+}
+
+/* 设置按钮 (FAB) */
+.settings-fab {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 20px);
+  right: calc(env(safe-area-inset-right) + 20px);
+  /* Half-size FAB for both desktop and narrow viewports (as requested). */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  cursor: pointer;
+  border: none;
+  z-index: 100;
+  transition: color 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body:not(.liquid-glass) .settings-fab:hover {
+  color: var(--accent) !important;
+  transform: none !important;
+  box-shadow: inset var(--shadow-offset-in) var(--shadow-offset-in) var(--shadow-blur-in) var(--shadow-dark),
+    inset calc(-1 * var(--shadow-offset-in)) calc(-1 * var(--shadow-offset-in)) var(--shadow-blur-in) var(--shadow-light) !important;
+}
+
+/* 拟态主题：恢复搜索模态框阴影效果 */
+body:not(.liquid-glass) .search-modal-content.soft-out {
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light) !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+body:not(.liquid-glass) .search-modal-content.soft-out:hover {
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light) !important;
+  transform: none !important;
+}
+
+/* 移除设置模态框点击凹陷效果 - 仅拟态主题 */
+body:not(.liquid-glass) .settings-panel.soft-out:active {
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light) !important;
+  transform: none !important;
+}
+
+/* App Card 凹陷效果 - 仅拟态主题 */
+body:not(.liquid-glass) .app-card.soft-out:hover:not(:active) {
+  transform: none !important;
+  box-shadow: inset var(--shadow-offset-in) var(--shadow-offset-in) var(--shadow-blur-in) var(--shadow-dark),
+    inset calc(-1 * var(--shadow-offset-in)) calc(-1 * var(--shadow-offset-in)) var(--shadow-blur-in) var(--shadow-light) !important;
+  will-change: auto;
+}
+
+/* 返回顶部 (FAB) */
+.back-to-top {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 20px);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  z-index: 100;
+  color: var(--accent);
+
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.back-to-top.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 移动端页面上移 */
+/* 移动端页面上移与边距优化 */
+@media (max-width: 700px) {
+  body {
+    justify-content: flex-start;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 360px) {
+  .main-container {
+    /* Keep user-controlled layout variables effective even on very small screens. */
+    padding-top: calc(var(--content-padding-top) + var(--safe-top));
+    padding-right: calc(var(--content-padding-x) + var(--safe-right));
+    padding-bottom: calc(var(--content-padding-bottom) + var(--safe-bottom));
+    padding-left: calc(var(--content-padding-x) + var(--safe-left));
+  }
+
+  body {
+    justify-content: flex-start;
+  }
+}
+
+/* ============================================
+   Mobile Touch States 
+   移动端触摸状态
+   ============================================ */
+
+/* 移动端触摸设备专用样式 */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable pinch-zoom gesture while keeping normal scrolling. */
+  html,
+  body {
+    touch-action: pan-x pan-y;
+  }
+
+
+  /* 禁用所有元素的点击高亮 */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  .soft-out,
+  .soft-in,
+  button,
+  a,
+  input,
+  .search-btn,
+  .engine-icon,
+  .search-form {
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+  }
+
+  /* 禁用所有按钮和可点击元素的 focus 轮廓 */
+  button:focus,
+  button:active,
+  a:focus,
+  a:active,
+  .soft-out:focus,
+  .soft-out:active,
+  .search-btn:focus,
+  .search-btn:active,
+  .engine-icon:focus,
+  .engine-icon:active {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* app-card 移动端圆角保护 */
+  .app-card {
+    border-radius: var(--card-radius, 20%) !important;
+  }
+
+  .app-card:active {
+    border-radius: var(--card-radius, 20%) !important;
+    transform: scale(0.96);
+  }
+
+  /* 右键/长按菜单圆角 */
+  .ql-context-menu {
+    border-radius: 12px !important;
+  }
+
+  .ql-menu-item {
+    border-radius: 8px !important;
+  }
+
+  /* 设置面板移动端圆角 */
+  .settings-panel {
+    border-radius: 24px !important;
+  }
+
+  .settings-island {
+    border-radius: 20px !important;
+  }
+
+  /* 模态框移动端圆角 */
+  .ql-modal-content {
+    border-radius: 20px !important;
+  }
+
+  /* 搜索引擎菜单移动端圆角 */
+  .engine-menu {
+    border-radius: 16px !important;
+  }
+
+  .engine-item {
+    border-radius: 10px !important;
+  }
+
+  /* 下拉选项圆角 */
+  .ql-select-options {
+    border-radius: 16px !important;
+  }
+
+  .ql-option {
+    border-radius: 12px !important;
+  }
+}
+
+/* ============================================
+   Accessibility - Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .soft-out:hover {
+    will-change: auto;
+  }
+}

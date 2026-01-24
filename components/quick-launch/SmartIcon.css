@@ -1,0 +1,107 @@
+/**
+ * @file SmartIcon.css
+ * @description 智能图标组件样式类。
+ *
+ * 核心逻辑：
+ * 1. 统一容器：为不同来源的图标（Favicon, 渐变色, 本地图片）提供一致的显示尺寸和对齐方式。
+ * 2. 骨架屏保护：针对从存储中异步加载的 Base64 本地图标，提供一个闪烁占位（Shimmer Placeholder），防止加载前的空白闪现。
+ * 3. 响应式：图标尺寸随卡片缩放动态调整。
+ */
+
+/* 品牌图标统一容器 - 使用 CSS 变量实现动态缩放 */
+.smart-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 基础高度 40px，随卡片缩放 */
+  height: calc(40px * var(--grid-card-scale, var(--card-scale, 1)));
+  transition: transform 0.2s ease;
+}
+
+/* 注：悬停时的交互效果由父级 .app-card 统一驱动 */
+
+/* Google 专属四色渐变图标样式 */
+.google-gradient-icon {
+  background: linear-gradient(135deg, #4285F4, #EA4335, #FBBC05, #34A853);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 外部 Favicon 图标样式 - 使用 CSS 变量实现动态缩放 */
+.favicon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(40px * var(--grid-card-scale, var(--card-scale, 1)));
+}
+
+.remote-favicon {
+  /* 基础尺寸 36px，随卡片缩放 */
+  width: calc(36px * var(--grid-card-scale, var(--card-scale, 1)));
+  height: calc(36px * var(--grid-card-scale, var(--card-scale, 1)));
+  /* 最小尺寸限制，防止过小 */
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  transition: all 0.2s ease;
+}
+
+/*
+ * 图标占位 (Icon Placeholder)
+ * 场景：用于"图片模式"的本地图标加载。
+ * 设计：不额外渲染任何"骨架/凹陷/扫光"效果，仅占位，保持与卡片背景浑然一体。
+ */
+.icon-image-placeholder {
+  width: calc(36px * var(--grid-card-scale, var(--card-scale, 1)));
+  height: calc(36px * var(--grid-card-scale, var(--card-scale, 1)));
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Disable shimmer (keep placeholder invisible). */
+.icon-image-placeholder::after {
+  content: none;
+  animation: none;
+}
+
+@keyframes iconPlaceholderShimmer {
+  0% {
+    transform: translateX(-140%);
+  }
+
+  60% {
+    transform: translateX(140%);
+  }
+
+  100% {
+    transform: translateX(140%);
+  }
+}
+
+/* 在用户开启"减少运动"系统设置时，关闭扫光动画以保证无障碍体验 */
+@media (prefers-reduced-motion: reduce) {
+  .icon-image-placeholder::after {
+    animation: none;
+  }
+}
+
+/* 移动端机型：由于屏幕像素密度与操作习惯，适当增大图标显示比例 */
+@media (max-width: 500px) {
+  .remote-favicon {
+    /* 移动端基础尺寸增大到 48px，仍随卡片缩放 */
+    width: calc(48px * var(--grid-card-scale, var(--card-scale, 1)));
+    height: calc(48px * var(--grid-card-scale, var(--card-scale, 1)));
+  }
+
+  .icon-image-placeholder {
+    width: calc(48px * var(--grid-card-scale, var(--card-scale, 1)));
+    height: calc(48px * var(--grid-card-scale, var(--card-scale, 1)));
+  }
+}
