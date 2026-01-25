@@ -5,49 +5,23 @@
 </p>
 
 <p align="center">
-  <strong>A beautiful neumorphic browser new tab extension</strong>
+  <strong>NeuTab browser new tab extension</strong>
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
+  NeuTab is a lightweight browser new tab extension with search and quick launch.
+</p>
+
+<p align="center">
   <a href="#installation">Installation</a> •
   <a href="#development">Development</a> •
-  <a href="#license">License</a>
-</p>
-
-<p align="center">
+  <a href="LICENSE">License</a> •
   <a href="#neutab-1">中文文档</a>
 </p>
 
----
-
-## Features
-
-### 🎨 Immersive Visual Themes
-- **Neumorphism** (Default): A soft, realistic UI design with subtle lighting and shadows that mimic physical objects.
-- **Liquid Glass**: A premium aesthetic featuring frosted glass effects (Glassmorphism), vibrant gradients, and sci-fi breathing animations.
-- **Theme Mode**: Support for **Light**, **Dark**, and **Auto** (system sync) modes.
-
-### 🔍 Smart Search
-- **Multi-Engine Support**: Built-in Google, Bing, and GitHub engines.
-- **Custom Engines**: Add your own search engines with custom URL templates.
-- **Smart Suggestions**: Real-time search suggestions from your **Bookmarks** and **Quick Launch Apps**.
-- **Privacy First**: All suggestions are processed locally.
-
-### 🚀 Quick Launch
-- **Group Management**: Organize your favorite sites into custom groups.
-- **Drag & Drop**: Intuitive sorting for both apps and groups (powered by @dnd-kit).
-- **Smart Icon System**:
-  1. **Vector Icons**: 150+ high-quality SVGs for popular sites.
-  2. **Letter Avatars**: Auto-generated gradient avatars for unmapped sites.
-  3. **Favicons**: Automatic fetching of high-res favicons as a fallback.
-- **Auto-Categories**: Optional "Frequently Visited" and "Recent History" groups.
-
-### ⚙️ Personalization & Data
-- **Layout Control**: Fully customizable container width, padding, card size, and corner radius.
-- **Cloud Sync**: Seamless cross-device synchronization using Chrome Sync (with chunked storage support to bypass the 8KB limit).
-- **Backup & Restore**: Export your full configuration (including custom icons) to JSON and restore it anytime.
-- **Offline First**: Zero-latency rendering with synchronous local caching to prevent FOUC (Flash of Unstyled Content).
+<p align="center">
+  <img src="assets/Interface%20Demo.png" alt="NeuTab interface preview" width="900">
+</p>
 
 ---
 
@@ -140,58 +114,21 @@ NeuTab/
 
 ---
 
-## License
-
-[MIT](LICENSE)
-
----
-
----
-
 # NeuTab
 
 <p align="center">
-  <strong>精美的 NeuTab 新拟态浏览器主页扩展</strong>
+  <strong>NeuTab 浏览器新标签页扩展</strong>
 </p>
 
 <p align="center">
-  <a href="#功能特性">功能特性</a> •
-  <a href="#安装方法">安装方法</a> •
-  <a href="#开发指南">开发指南</a> •
-  <a href="#许可证">许可证</a>
+  NeuTab 是一款轻量的浏览器新标签页插件，提供搜索与快捷启动。
 </p>
 
----
-
-## 功能特性
-
-### 🎨 沉浸式视觉主题
-- **新拟态 (Neumorphism)**：默认风格，提供柔和、逼真的光影质感，还原物理按键触感。
-- **流体玻璃 (Liquid Glass)**：高级磨砂玻璃特效（Glassmorphism），配合细腻的流光渐变与呼吸动效，科技感十足。
-- **主题模式**：完美支持 **浅色**、**深色** 及 **跟随系统 (Auto)** 切换。
-
-### 🔍 智能搜索
-- **多引擎支持**：内置 Google、Bing、GitHub 搜索。
-- **自定义引擎**：支持添加任意自定义搜索引擎（支持 URL 模板）。
-- **智能建议**：实时匹配您的 **浏览器书签** 和 **快捷启动应用**，无需离开新标签页即可快速跳转。
-- **隐私保护**：所有建议均在本地处理，不上传任何数据。
-
-### 🚀 快速启动 (Quick Launch)
-- **分组管理**：创建自定义分组来整理您的常用网站。
-- **拖拽排序**：支持图标与分组的自由拖动排序（基于 @dnd-kit）。
-- **智能图标系统**：
-  1. **矢量图标**：内置 150+ 热门网站的高清 SVG 图标。
-  2. **字母头像**：为未收录网站自动生成美观的渐变字母头像。
-  3. **Favicon**：自动抓取网站高清 Favicon 作为补充。
-- **动态分类**：可选开启“常去网站”和“最近访问”自动分组。
-
-### ⚙️ 个性化与数据
-- **布局定制**：全方位调整页面最大宽度、边距、卡片尺寸及圆角大小。
-- **云端同步**：利用 Chrome Sync 实现跨设备配置同步（采用分片存储技术，突破原生 8KB 限制）。
-- **备份还原**：支持将所有配置（含自定义图标数据）导出为 JSON 文件，随时恢复。
-- **零延迟渲染**：采用同步缓存机制，彻底根除新标签页加载时的闪屏 (FOUC) 问题。
-
----
+<p align="center">
+  <a href="#安装方法">安装方法</a> •
+  <a href="#开发指南">开发指南</a> •
+  <a href="LICENSE">许可证</a>
+</p>
 
 ## 安装方法
 
@@ -279,9 +216,3 @@ NeuTab/
 │   └── themes/             # 特定主题样式 (如 liquid-glass.css)
 └── utils/                  # 工具库 (存储封装、多语言、Favicon)
 ```
-
----
-
-## 许可证
-
-[MIT](LICENSE)

@@ -19,6 +19,7 @@ export const lockBodyScroll = (): (() => void) => {
     const scrollbarWidth = window.innerWidth - root.clientWidth
     body.style.overflow = "hidden"
     root.style.overflow = "hidden"
+    body.classList.add("scroll-locked")
     if (scrollbarWidth > 0) {
       body.style.paddingRight = `${scrollbarWidth}px`
     }
@@ -33,6 +34,7 @@ export const lockBodyScroll = (): (() => void) => {
       body.style.overflow = prevBodyOverflow
       body.style.paddingRight = prevBodyPaddingRight
       root.style.overflow = prevHtmlOverflow
+      body.classList.remove("scroll-locked")
     }
   }
 }

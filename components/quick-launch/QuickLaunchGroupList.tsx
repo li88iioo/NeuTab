@@ -19,6 +19,7 @@ import type { QuickLaunchApp, QuickLaunchGroup } from "~types/quickLaunch"
 type DndSensors = React.ComponentProps<typeof DndContext>["sensors"]
 type DndOnDragStart = React.ComponentProps<typeof DndContext>["onDragStart"]
 type DndOnDragCancel = React.ComponentProps<typeof DndContext>["onDragCancel"]
+type DndOnDragMove = React.ComponentProps<typeof DndContext>["onDragMove"]
 
 interface QuickLaunchGroupListProps {
   groups: QuickLaunchGroup[]
@@ -27,6 +28,7 @@ interface QuickLaunchGroupListProps {
   onDragEnd: (event: DragEndEvent, groupId: string) => void
   onDragStart?: DndOnDragStart
   onDragCancel?: DndOnDragCancel
+  onDragMove?: DndOnDragMove
   onContextMenu: (event: React.MouseEvent, app: QuickLaunchApp, groupId: string) => void
   onLongPressMenu: (
     x: number,
@@ -70,6 +72,7 @@ const QuickLaunchGroupList = ({
   onDragEnd,
   onDragStart,
   onDragCancel,
+  onDragMove,
   onContextMenu,
   onLongPressMenu,
   onAddShortcut,
@@ -144,6 +147,7 @@ const QuickLaunchGroupList = ({
                 collisionDetection={pointerWithin}
                 onDragStart={(event) => handleDragStart(event, group.id)}
                 onDragCancel={handleDragCancel}
+                onDragMove={onDragMove}
                 onDragEnd={(event) => handleDragEnd(event, group.id, isDynamic)}>
                 <SortableContext items={group.apps} strategy={rectSortingStrategy} disabled={isDynamic}>
                   <div

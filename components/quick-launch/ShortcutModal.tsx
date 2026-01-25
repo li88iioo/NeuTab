@@ -83,6 +83,11 @@ const ShortcutModal = ({
     const modalRef = useRef<HTMLDivElement | null>(null)
     const nameInputRef = useRef<HTMLInputElement | null>(null)
     const titleId = useId()
+    const onCancelRef = useRef(onCancel)
+
+    useEffect(() => {
+        onCancelRef.current = onCancel
+    }, [onCancel])
 
     /**
      * Effect: 锁定背景滚动
@@ -96,7 +101,7 @@ const ShortcutModal = ({
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 e.preventDefault()
-                onCancel()
+                onCancelRef.current()
                 return
             }
 
@@ -155,7 +160,7 @@ const ShortcutModal = ({
             unlockScroll()
             previousFocusRef.current?.focus?.()
         }
-    }, [onCancel])
+    }, [])
 
     /** 预设品牌识别色列表 */
     const COLORS = [

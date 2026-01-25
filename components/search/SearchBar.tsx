@@ -2,10 +2,19 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowRight, FiArrowUpRight, FiPlus, FiTrash2, FiSearch, FiGlobe, FiEdit2, FiGrid } from "react-icons/fi"
+import { BaiduIcon } from "./icons/BaiduIcon"
 import { BingIcon } from "./icons/BingIcon"
 import { CustomEngineIcon } from "./icons/CustomEngineIcon"
+import { DuckDuckGoIcon } from "./icons/DuckDuckGoIcon"
 import { GithubIcon } from "./icons/GithubIcon"
 import { GoogleColorIcon } from "./icons/GoogleColorIcon"
+import { PerplexityIcon } from "./icons/PerplexityIcon"
+import { Qihoo360Icon } from "./icons/Qihoo360Icon"
+import { QuarkIcon } from "./icons/QuarkIcon"
+import { SogouIcon } from "./icons/SogouIcon"
+import { StartpageIcon } from "./icons/StartpageIcon"
+import { YahooIcon } from "./icons/YahooIcon"
+import { YandexIcon } from "./icons/YandexIcon"
 import EngineModal from "./EngineModal"
 import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
 import { DEFAULT_SETTINGS } from "~utils/settings"
@@ -46,6 +55,94 @@ const DEFAULT_ENGINES: Engine[] = [
   { id: "github", name: "GitHub", url: "https://github.com/search?q=" }
 ]
 
+type CustomEngineIconRule = {
+  names?: string[]
+  domains?: string[]
+  render: (size: number) => JSX.Element
+}
+
+const CUSTOM_ENGINE_ICON_RULES: CustomEngineIconRule[] = [
+  {
+    names: ["duckduckgo", "ddg"],
+    domains: ["duckduckgo.com", "duck.com"],
+    render: (size) => <DuckDuckGoIcon size={size} />
+  },
+  {
+    names: ["yahoo"],
+    domains: ["yahoo.com"],
+    render: (size) => <YahooIcon size={size} />
+  },
+  {
+    names: ["yandex"],
+    domains: ["yandex.com", "yandex.ru", "yandex.kz", "yandex.com.tr"],
+    render: (size) => <YandexIcon size={size} />
+  },
+  {
+    names: ["360", "360search", "haosou"],
+    domains: ["so.com", "haosou.com", "360.cn"],
+    render: (size) => <Qihoo360Icon size={size} />
+  },
+  {
+    names: ["baidu"],
+    domains: ["baidu.com"],
+    render: (size) => <BaiduIcon size={size} />
+  },
+  {
+    names: ["quark"],
+    domains: ["quark.sm.cn", "quark.cn", "sm.cn"],
+    render: (size) => <QuarkIcon size={size} />
+  },
+  {
+    names: ["sogou"],
+    domains: ["sogou.com"],
+    render: (size) => <SogouIcon size={size} />
+  },
+  {
+    names: ["startpage"],
+    domains: ["startpage.com"],
+    render: (size) => <StartpageIcon size={size} />
+  },
+  {
+    names: ["perplexity"],
+    domains: ["perplexity.ai"],
+    render: (size) => <PerplexityIcon size={size} />
+  }
+]
+
+const normalizeEngineName = (name: string) => name.trim().toLowerCase()
+
+const extractEngineHost = (templateUrl: string): string => {
+  const raw = templateUrl.trim()
+  if (!raw) return ""
+  try {
+    const marker = "__NEUTAB_QUERY__"
+    const normalized = raw.replace(/%s/g, marker)
+    const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(normalized)
+    const parsed = new URL(hasScheme ? normalized : `https://${normalized}`)
+    return parsed.hostname.replace(/^www\./, "").toLowerCase()
+  } catch {
+    return ""
+  }
+}
+
+const matchesDomain = (host: string, domain: string) => {
+  if (!host || !domain) return false
+  return host === domain || host.endsWith(`.${domain}`)
+}
+
+const resolveCustomEngineIcon = (engine: Engine, size: number) => {
+  const name = normalizeEngineName(engine.name)
+  const host = extractEngineHost(engine.url)
+
+  for (const rule of CUSTOM_ENGINE_ICON_RULES) {
+    const nameHit = rule.names?.some((token) => name.includes(token))
+    const domainHit = rule.domains?.some((domain) => matchesDomain(host, domain))
+    if (nameHit || domainHit) return rule.render(size)
+  }
+
+  return null
+}
+
 /** 
  * 快捷启动数据存储 
  * 使用 local area (5MB) 以绕过 sync area 的 8KB 限制 
@@ -61,6 +158,9 @@ const EngineIcon = ({ engine, size = 18 }: { engine: Engine; size?: number }) =>
     case "bing":
       return <BingIcon size={size} />
     default: {
+      const resolved = resolveCustomEngineIcon(engine, size)
+      if (resolved) return resolved
+
       // Privacy-first: custom engines always use a local icon (no remote favicon fetch).
       if (engine.id.startsWith("custom_")) return <CustomEngineIcon size={size} />
       return <FiSearch size={size} color="#999" />

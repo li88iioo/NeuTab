@@ -41,6 +41,24 @@ const patchHtml = async (filePath) => {
   return true
 }
 
+const removeFileByName = async (dir, filename) => {
+  if (!(await exists(dir))) return false
+  const entries = await fs.readdir(dir, { withFileTypes: true })
+  let removed = false
+  for (const ent of entries) {
+    const full = path.join(dir, ent.name)
+    if (ent.isDirectory()) {
+      removed ||= await removeFileByName(full, filename)
+      continue
+    }
+    if (ent.isFile() && ent.name === filename) {
+      await fs.rm(full)
+      removed = true
+    }
+  }
+  return removed
+}
+
 const main = async () => {
   const buildDir = path.join(repoRoot, "build")
   if (!(await exists(buildDir))) return
@@ -59,6 +77,11 @@ const main = async () => {
     console.log("[patch-build-html-paths] Patched build/*/newtab.html to use relative asset paths.")
   } else {
     console.log("[patch-build-html-paths] No changes needed.")
+  }
+
+  const removed = await removeFileByName(buildDir, "Interface Demo.png")
+  if (removed) {
+    console.log("[patch-build-html-paths] Removed Interface Demo.png from build output.")
   }
 }
 

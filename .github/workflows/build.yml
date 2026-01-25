@@ -43,11 +43,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm build
+      - name: Package (Chrome)
+        run: pnpm package
 
-      - name: Upload Artifact
+      - name: Package (Firefox)
+        run: pnpm package:firefox
+
+      - name: Upload Chrome Package
         uses: actions/upload-artifact@v4
         with:
-          name: NeuTab
+          name: NeuTab-chrome
           path: build/chrome-mv3-prod/
+
+      - name: Upload Firefox Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeuTab-firefox
+          path: build/firefox-mv3-prod/

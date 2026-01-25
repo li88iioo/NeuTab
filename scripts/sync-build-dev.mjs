@@ -18,8 +18,8 @@ const src = path.join(root, "build", "chrome-mv3-prod")
 const dst = path.join(root, "build", "chrome-mv3-dev")
 
 if (!fs.existsSync(src)) {
-  console.error(`[sync-build-dev] Missing source folder: ${src}`)
-  process.exit(1)
+  console.warn(`[sync-build-dev] Missing source folder: ${src}`)
+  process.exit(0)
 }
 
 // 确保目标目录存在并执行强制同步
@@ -27,4 +27,3 @@ fs.mkdirSync(dst, { recursive: true })
 fs.cpSync(src, dst, { recursive: true, force: true })
 
 console.log(`[sync-build-dev] Synced ${src} -> ${dst}`)
-

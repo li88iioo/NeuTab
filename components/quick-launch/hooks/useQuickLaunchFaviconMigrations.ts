@@ -19,10 +19,9 @@ export const useQuickLaunchFaviconMigrations = (
       ...group,
       apps: group.apps.map((app) => {
         if (app.customIcon?.includes("gstatic.com")) {
-          const domain = new URL(app.url).hostname.replace(/^www\./, "")
           return {
             ...app,
-            customIcon: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+            customIcon: undefined
           }
         }
         return app

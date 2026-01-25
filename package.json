@@ -10,8 +10,8 @@
     "dev:firefox": "node node_modules/plasmo/bin/index.mjs dev --target=firefox-mv3",
     "build": "plasmo build && node ./scripts/patch-build-html-paths.mjs",
     "build:firefox": "node node_modules/plasmo/bin/index.mjs build --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs",
-    "package": "plasmo package && node ./scripts/patch-build-html-paths.mjs && node ./scripts/sync-build-dev.mjs",
-    "package:firefox": "node node_modules/plasmo/bin/index.mjs package --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs"
+    "package": "pnpm build && plasmo package && node ./scripts/patch-build-html-paths.mjs && node ./scripts/sync-build-dev.mjs",
+    "package:firefox": "pnpm build:firefox && node node_modules/plasmo/bin/index.mjs package --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.0.8",

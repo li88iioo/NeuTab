@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import type { QuickLaunchApp, QuickLaunchGroup } from "~types/quickLaunch"
 import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
@@ -21,6 +21,8 @@ const hashGroups = (groups: QuickLaunchGroup[]): string => {
   return hashString(JSON.stringify(groups))
 }
 
+const LOCAL_GROUPS_TIMESTAMP_KEY = `${GROUPS_KEY}_local_timestamp`
+
 export const useQuickLaunchGroups = (language: Language | undefined) => {
   const [groups, setGroups, { isLoading: isGroupsLoading }] = useStorage<QuickLaunchGroup[]>(
     { key: GROUPS_KEY, instance: localExtStorage },
@@ -29,18 +31,20 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
 
   const lastSyncedHashRef = useRef<string | null>(null)
   const lastQueuedHashRef = useRef<string | null>(null)
+  const lastLocalHashRef = useRef<string | null>(null)
 
   useEffect(() => {
     const migrateAndSync = async () => {
       try {
         const currentT = getTranslations(language || "zh")
 
-        const [idbData, localData, chunkedData, syncData, legacyApps] = await Promise.all([
+        const [idbData, localData, localTimestamp, chunkedData, syncData, legacyApps] = await Promise.all([
           getGroups<QuickLaunchGroup[]>().catch(err => {
             logger.warn("Failed to read from IndexedDB:", err)
             return null
           }),
           localExtStorage.get<QuickLaunchGroup[]>(GROUPS_KEY),
+          localExtStorage.get<number>(LOCAL_GROUPS_TIMESTAMP_KEY).catch(() => 0),
           getChunkedData<QuickLaunchGroup[]>(syncStorage, GROUPS_KEY),
           syncStorage.get<QuickLaunchGroup[]>(GROUPS_KEY),
           syncStorage.get<QuickLaunchApp[]>("quickLaunchApps")
@@ -79,10 +83,13 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
           }
         }
 
-        if (Array.isArray(localData) && localData.length > 0 && !latestData) {
-          latestData = localData
-          latestTimestamp = Date.now() - 3600000
-          latestSource = "local"
+        if (Array.isArray(localData) && localData.length > 0) {
+          const ts = typeof localTimestamp === "number" ? localTimestamp : 0
+          if (ts > latestTimestamp) {
+            latestData = localData
+            latestTimestamp = ts
+            latestSource = "local"
+          }
         }
 
         if (Array.isArray(legacyApps) && legacyApps.length > 0 && !latestData) {
@@ -101,7 +108,11 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
 
         logger.debug(`Restoring from ${latestSource} (timestamp: ${latestTimestamp})`)
 
-        await localExtStorage.set(GROUPS_KEY, latestData)
+        await Promise.all([
+          localExtStorage.set(GROUPS_KEY, latestData),
+          localExtStorage.set(LOCAL_GROUPS_TIMESTAMP_KEY, latestTimestamp)
+        ])
+        lastLocalHashRef.current = hashGroups(latestData)
         setGroups(latestData)
 
         Promise.all([
@@ -123,6 +134,20 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleSyncRef = useRef<number | null>(null)
   const syncRevisionRef = useRef(0)
+  useLayoutEffect(() => {
+    if (isGroupsLoading || !groups || groups.length === 0) return
+
+    const currentHash = hashGroups(groups)
+    if (currentHash === lastLocalHashRef.current) return
+    lastLocalHashRef.current = currentHash
+
+    const timestamp = Date.now()
+    void Promise.all([
+      localExtStorage.set(GROUPS_KEY, groups),
+      localExtStorage.set(LOCAL_GROUPS_TIMESTAMP_KEY, timestamp)
+    ])
+  }, [groups, isGroupsLoading])
+
   useEffect(() => {
     if (isGroupsLoading || !groups || groups.length === 0) return
 

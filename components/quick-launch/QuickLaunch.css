@@ -124,6 +124,11 @@
 @media (hover: none) and (pointer: coarse) {
   .app-card,
   .app-card-content {
+    touch-action: pan-y;
+  }
+
+  body.dragging-app-card .app-card,
+  body.dragging-app-card .app-card-content {
     touch-action: none;
   }
 }

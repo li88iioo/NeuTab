@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import {
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent
@@ -131,11 +132,17 @@ const QuickLaunch = () => {
     customIcon: ""
   })
 
-  /** DND Kit 传感器配置：Pointer 距离必须超过 8px 以区分点击与拖拽 */
+  /** DND Kit 传感器配置：鼠标距离超过 8px；触摸需长按以避免滚动误触 */
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8
+      }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 600,
+        tolerance: 8
       }
     }),
     useSensor(KeyboardSensor, {
@@ -189,6 +196,10 @@ const QuickLaunch = () => {
   const handleDragEndWithCleanup = (event: DragEndEvent, groupId: string) => {
     handleDragEnd(event, groupId)
     setDraggingClass(false)
+  }
+
+  const handleDragMove = () => {
+    if (contextMenu.visible) closeContextMenu()
   }
 
   useEffect(() => {
@@ -422,6 +433,7 @@ const QuickLaunch = () => {
         maxColumns={maxColumns}
         sensors={sensors}
         onDragEnd={handleDragEndWithCleanup}
+        onDragMove={handleDragMove}
         onDragStart={handleDragStart}
         onDragCancel={handleDragCancel}
         onContextMenu={handleContextMenu}

@@ -265,6 +265,10 @@ function NewTab() {
     const handleScroll = (e?: Event) => {
       scheduleActivity()
 
+      if (document.body.classList.contains("scroll-locked")) {
+        return
+      }
+
       if (e?.target) lastScrollContainerRef.current = e.target
 
       // 滚动时临时隐藏悬浮按钮，减少视觉干扰并防止误触

@@ -53,12 +53,30 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
   // "Rendered fewer hooks than expected" 的运行时错误。
   const domain = useMemo(() => extractDomain(url), [url])
   const builtInIconUrl = useMemo(() => getBuiltInIconUrl({ name, url }), [name, url])
-  const faviconUrl = useMemo(() => getBrowserFaviconUrl(url, 64), [url])
+  const baseFaviconUrl = useMemo(() => getBrowserFaviconUrl(url, 64), [url])
+  const [faviconRevision, setFaviconRevision] = useState(0)
+  const faviconUrl = useMemo(() => {
+    if (!baseFaviconUrl) return null
+    if (!faviconRevision) return baseFaviconUrl
+    const joiner = baseFaviconUrl.includes("?") ? "&" : "?"
+    return `${baseFaviconUrl}${joiner}v=${faviconRevision}`
+  }, [baseFaviconUrl, faviconRevision])
 
   const candidates = useMemo(() => {
     // 优先级：上传图标 -> 用户提供的 URL -> 内置图标库 -> 浏览器 favicon
     return [localIcon, customIcon, builtInIconUrl, faviconUrl].filter(Boolean) as string[]
   }, [localIcon, customIcon, builtInIconUrl, faviconUrl])
+
+  const shouldRetryFavicon =
+    effectiveStyle === "image" && !localIcon && !customIcon && !builtInIconUrl && !!baseFaviconUrl
+
+  useEffect(() => {
+    if (!shouldRetryFavicon) return
+    const timer = window.setTimeout(() => {
+      setFaviconRevision((prev) => prev + 1)
+    }, 2000)
+    return () => window.clearTimeout(timer)
+  }, [shouldRetryFavicon, baseFaviconUrl, url])
 
   // 当输入变化（URL/图标来源变化）时，重置回退索引。
   useEffect(() => {
