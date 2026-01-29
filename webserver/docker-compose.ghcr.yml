@@ -1,0 +1,10 @@
+services:
+  neutab:
+    image: ghcr.io/li88iioo/neutab:latest
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

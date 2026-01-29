@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
-import type { QuickLaunchGroup } from "~types/quickLaunch"
-import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
+import type { QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
+import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
 import { putIcon, getIcon, deleteIcon } from "~utils/indexedDB"
-import { logger } from "~utils/logger"
+import { logger } from "@neutab/shared/utils/logger"
 import { localImageExtStorage } from "../quickLaunchStorage"
 
 const saveLocalIcon = async (appId: string, base64: string) => {

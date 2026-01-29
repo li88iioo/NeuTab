@@ -1092,3 +1092,212 @@ body.dark .language-select-option:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Cloud Sync Section
+   ============================================ */
+
+.sync-section {
+  margin-top: 20px;
+}
+
+.sync-section .settings-field {
+  padding: 12px 18px;
+}
+
+.sync-section .island-row {
+  padding: 14px 18px;
+}
+
+.sync-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.sync-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--txt-primary);
+  background: var(--bg);
+  transition: all 0.2s ease;
+}
+
+.sync-btn:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.sync-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sync-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  font-size: 0.85rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark .sync-status-row {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.sync-status-label {
+  color: var(--txt-secondary);
+}
+
+.sync-status-value {
+  color: var(--txt-primary);
+}
+
+.sync-status-value.success {
+  color: #27ae60;
+}
+
+.sync-status-value.failed {
+  color: #e74c3c;
+}
+
+/* ============================================
+   Input with Toggle (Password visibility)
+   ============================================ */
+
+.input-with-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-toggle .settings-input {
+  padding-right: 44px;
+}
+
+.input-toggle-btn {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.input-toggle-btn:hover {
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.dark .input-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   Confirm Dialog
+   ============================================ */
+
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.confirm-dialog {
+  width: min(360px, 90vw);
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--bg);
+  text-align: center;
+  animation: slideUp 0.2s ease;
+}
+
+/* 禁用对话框容器的所有变形效果 */
+.confirm-dialog.soft-out:hover,
+.confirm-dialog.soft-out:active {
+  transform: none !important;
+}
+
+body.liquid-glass .confirm-dialog.soft-out:hover,
+body.liquid-glass .confirm-dialog.soft-out:active {
+  transform: none !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirm-dialog-title {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+
+.confirm-dialog-message {
+  margin: 0 0 24px 0;
+  font-size: 0.95rem;
+  color: var(--txt-secondary);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-dialog-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--txt-primary);
+}
+
+.confirm-dialog-btn.cancel {
+  color: var(--txt-secondary);
+}
+
+.confirm-dialog-btn.confirm {
+  color: var(--accent);
+}

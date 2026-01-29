@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
-import type { QuickLaunchApp, QuickLaunchGroup } from "~types/quickLaunch"
-import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
-import { getTranslations, type Language } from "~utils/i18n"
+import type { QuickLaunchApp, QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
+import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
+import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import { setChunkedData, getChunkedData } from "~utils/chunkedStorage"
 import { putGroups, getGroups } from "~utils/indexedDB"
-import { logger } from "~utils/logger"
+import { logger } from "@neutab/shared/utils/logger"
 import { GROUPS_KEY, localExtStorage, syncStorage } from "../quickLaunchStorage"
 
 const hashString = (value: string): string => {
@@ -22,6 +22,8 @@ const hashGroups = (groups: QuickLaunchGroup[]): string => {
 }
 
 const LOCAL_GROUPS_TIMESTAMP_KEY = `${GROUPS_KEY}_local_timestamp`
+const LAST_MIGRATE_SYNC_KEY = "neutab_last_migrate_sync"
+const MIGRATE_SYNC_THROTTLE_MS = 3000 // 3秒内不重复执行，防止快速刷新触发配额限制
 
 export const useQuickLaunchGroups = (language: Language | undefined) => {
   const [groups, setGroups, { isLoading: isGroupsLoading }] = useStorage<QuickLaunchGroup[]>(
@@ -35,6 +37,15 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
 
   useEffect(() => {
     const migrateAndSync = async () => {
+      // 防止快速刷新时频繁写入，超出 Plasmo Storage 配额限制
+      const lastMigrateSync = parseInt(localStorage.getItem(LAST_MIGRATE_SYNC_KEY) || "0", 10)
+      const now = Date.now()
+      if (now - lastMigrateSync < MIGRATE_SYNC_THROTTLE_MS) {
+        logger.debug("Skipping migrateAndSync - throttled")
+        return
+      }
+      localStorage.setItem(LAST_MIGRATE_SYNC_KEY, String(now))
+
       try {
         const currentT = getTranslations(language || "zh")
 

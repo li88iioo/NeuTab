@@ -32,6 +32,8 @@
   "exclude": [
     "node_modules",
     "build",
-    "dist"
+    "dist",
+    "webserver/client",
+    "webserver/server"
   ]
 }

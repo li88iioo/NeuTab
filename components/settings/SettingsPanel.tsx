@@ -1,30 +1,32 @@
 import React, { useEffect, useRef, useState } from "react"
-import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 import {
   FiX, FiPlus, FiChevronUp, FiChevronDown, FiTrash2, FiDownload, FiUpload,
   FiSun, FiMoon, FiCheck, FiSliders, FiLayout, FiGlobe, FiHome, FiGrid,
   FiDatabase, FiClock, FiSearch, FiMaximize, FiMove, FiType, FiImage,
-  FiMonitor, FiCircle
+  FiMonitor, FiCircle, FiCloud, FiRefreshCw, FiEye, FiEyeOff
 } from "react-icons/fi"
-import type { QuickLaunchGroup } from "~types/quickLaunch"
-import { DEFAULT_GROUPS } from "~utils/quickLaunchDefaults"
-import { DEFAULT_SETTINGS, LAYOUT_LIMITS, clampNumber, type ThemeMode, type VisualTheme } from "~utils/settings"
-import { getTranslations, type Language } from "~utils/i18n"
-import { setChunkedData } from "~utils/chunkedStorage"
-import { lockBodyScroll } from "~utils/scrollLock"
-import { sanitizeHexColor, sanitizeInternalUrl, sanitizeName, sanitizeUrl } from "~utils/validation"
-import RangeInput from "./RangeInput"
+import type { QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
+import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
+import { DEFAULT_SETTINGS, LAYOUT_LIMITS, type ThemeMode, type VisualTheme } from "@neutab/shared/utils/settings"
+import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
+import { lockBodyScroll } from "@neutab/shared/utils/scrollLock"
+import { RangeInput } from "@neutab/ui"
+import { GROUPS_KEY, localExtStorage } from "~components/quick-launch/quickLaunchStorage"
+import {
+  applyImportDataToStorage,
+  buildBackupPayload as buildBackupPayloadFromStorage,
+  cloudPull,
+  cloudPush,
+  readCloudSyncStatus,
+  writeCloudSyncStatus,
+  type CloudSyncStatus
+} from "~utils/cloudSync"
 import "./SettingsPanel.css"
 
 interface SettingsPanelProps {
   onClose: () => void
 }
-
-const storage = new Storage()
-const syncStorage = new Storage() // for chunked cloud sync
-const localExtStorage = new Storage({ area: "local" }) // local storage for groups (5MB limit)
-const localImageExtStorage = new Storage({ area: "local" }) // for Base64 images
 
 type SectionKey = "personalization" | "layout" | "site" | "groups" | "backup"
 
@@ -74,7 +76,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
    * @description 使用 extension local area (5MB) 存储分组数据；sync area 的 8KB 限制无法承载多个图标。
    */
   const [groups, setGroups] = useStorage<QuickLaunchGroup[]>(
-    { key: "quickLaunchGroups", instance: localExtStorage },
+    { key: GROUPS_KEY, instance: localExtStorage },
     DEFAULT_GROUPS
   )
 
@@ -196,6 +198,17 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   const [importStatus, setImportStatus] = useState<{ type: "error" | "success"; message: string } | null>(null)
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null)
 
+  // 云同步状态
+  const [syncEnabled, setSyncEnabled] = useState(() => localStorage.getItem('syncEnabled') === 'true')
+  const [syncServerUrl, setSyncServerUrl] = useState(() => localStorage.getItem('syncServerUrl') || '')
+  const [syncAuthCode, setSyncAuthCode] = useState(() => localStorage.getItem('syncAuthCode') || '')
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => localStorage.getItem('autoSyncEnabled') === 'true')
+  const [lastSyncTime, setLastSyncTime] = useState(() => readCloudSyncStatus().lastSyncTime)
+  const [lastSyncStatus, setLastSyncStatus] = useState(() => readCloudSyncStatus().lastSyncStatus)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [showAuthCode, setShowAuthCode] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{ action: 'pull' | 'push' } | null>(null)
+
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const visualThemeSelectRef = useRef<HTMLDivElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -243,6 +256,26 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     commitLayoutCache("layout_contentPaddingX", next)
     void setContentPaddingX(next)
   }, [contentPaddingX, setContentPaddingX])
+
+  // 持久化云同步设置
+  useEffect(() => {
+    localStorage.setItem('syncEnabled', String(syncEnabled))
+    localStorage.setItem('syncServerUrl', syncServerUrl)
+    localStorage.setItem('syncAuthCode', syncAuthCode)
+    localStorage.setItem('autoSyncEnabled', String(autoSyncEnabled))
+  }, [syncEnabled, syncServerUrl, syncAuthCode, autoSyncEnabled])
+
+  // Keep UI in sync with CloudSyncAgent (auto sync) status updates.
+  useEffect(() => {
+    const onStatus = (e: Event) => {
+      const detail = (e as CustomEvent<CloudSyncStatus>).detail
+      if (!detail) return
+      setLastSyncTime(detail.timestamp)
+      setLastSyncStatus(detail.status)
+    }
+    window.addEventListener("neutab-cloud-sync-status", onStatus as EventListener)
+    return () => window.removeEventListener("neutab-cloud-sync-status", onStatus as EventListener)
+  }, [])
 
   useEffect(() => {
     if (!isVisualThemeOpen) return
@@ -351,7 +384,8 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
 
   /** 新增分组 */
   const addGroup = () => {
-    const name = newGroupName.trim() || `新分组 ${safeGroups.length + 1}`
+    // 如果用户未输入任何内容，使用默认名称；否则保留用户输入（包括空格）
+    const name = newGroupName === "" ? `${t.groupPrefix} ${safeGroups.length + 1}` : newGroupName
     const nextGroup: QuickLaunchGroup = {
       id: Date.now().toString(),
       name,
@@ -368,11 +402,11 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
 
   /** 提交分组名称更改 */
   const commitGroupName = (groupId: string, name: string) => {
-    const trimmed = name.trim()
-    setGroupNameDrafts((prev) => ({ ...prev, [groupId]: trimmed }))
+    // 不再强制 trim，允许用户保存空白或空字符串分组名
+    setGroupNameDrafts((prev) => ({ ...prev, [groupId]: name }))
     setGroups((prevGroups) => {
       const current = prevGroups?.length ? prevGroups : DEFAULT_GROUPS
-      return current.map((group) => (group.id === groupId ? { ...group, name: trimmed } : group))
+      return current.map((group) => (group.id === groupId ? { ...group, name } : group))
     })
   }
 
@@ -409,58 +443,9 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     setGroupToDelete(null)
   }
 
-  /** 
-   * 构建备份数据包
-   * @description 
-   * 1. 汇总所有核心设置。
-   * 2. 爬取所有快捷方式，并提取本地存储的 Base64 图标，实现全量备份。
-   */
-  const buildBackupPayload = async () => {
-    const searchEngines = await storage.get("searchEngines")
-    const currentEngine = await storage.get("currentEngine")
-
-    // 收集所有自定义图标数据
-    const customIcons: Record<string, string> = {}
-    for (const group of safeGroups) {
-      for (const app of group.apps) {
-        const base64 = await localImageExtStorage.get(`icon_${app.id}`)
-        if (typeof base64 === "string" && base64.startsWith("data:image/")) {
-          customIcons[app.id] = base64
-        }
-      }
-    }
-
-    return {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      data: {
-        searchEngines,
-        currentEngine,
-        themeMode: themeMode || DEFAULT_SETTINGS.themeMode,
-        visualTheme: visualTheme || DEFAULT_SETTINGS.visualTheme,
-        language: language || DEFAULT_SETTINGS.language,
-        quickLaunchGroups: safeGroups,
-        customIcons,
-        showClock,
-        showSeconds,
-        showSearchBar,
-        showTopSites,
-        showRecentHistory,
-        contentMaxWidth,
-        contentPaddingX: Math.max(LAYOUT_LIMITS.paddingX.min, contentPaddingX),
-        contentPaddingTop,
-        contentPaddingBottom,
-        iconBorderRadius,
-        cardSize,
-        siteTitle,
-        siteFavicon
-      }
-    }
-  }
-
   /** 执行备份导出 */
   const handleExport = async () => {
-    const payload = await buildBackupPayload()
+    const payload = await buildBackupPayloadFromStorage(language || DEFAULT_SETTINGS.language)
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -473,269 +458,68 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     URL.revokeObjectURL(url)
   }
 
-  /** 标准化导入的分组数据 */
-  const normalizeGroups = (raw: unknown): QuickLaunchGroup[] | null => {
-    if (!Array.isArray(raw)) return null
-    return raw.map((group, index) => {
-      const typed = group as Partial<QuickLaunchGroup>
-
-      const appsRaw = Array.isArray(typed.apps) ? typed.apps : []
-      const apps = appsRaw
-        .map((app, appIndex) => {
-          const a = app as any
-          const id = String(a?.id ?? `${Date.now()}-${index}-${appIndex}`)
-          const name = sanitizeName(String(a?.name ?? ""))
-          const color = sanitizeHexColor(String(a?.color ?? "#6c5ce7"))
-
-          const url = (() => {
-            const rawUrl = String(a?.url ?? "").trim()
-            if (!rawUrl) return ""
-            try {
-              return sanitizeUrl(rawUrl)
-            } catch {
-              return ""
-            }
-          })()
-
-          const internalUrl = (() => {
-            const rawUrl = String(a?.internalUrl ?? "").trim()
-            if (!rawUrl) return ""
-            try {
-              return sanitizeInternalUrl(rawUrl)
-            } catch {
-              return ""
-            }
-          })()
-
-          // Drop entries that don't have any usable navigation target after sanitization.
-          if (!url && !internalUrl) return null
-
-          // 图标风格只支持 text/image；旧数据的 auto 一律视为 image（图片模式自带“自动匹配/降级”能力）。
-          const iconStyleRaw = String(a?.iconStyle ?? "image")
-          const iconStyle = iconStyleRaw === "text" ? "text" : "image"
-
-          const customText = typeof a?.customText === "string" ? a.customText.slice(0, 2) : undefined
-
-          const customIcon = (() => {
-            const rawIcon = typeof a?.customIcon === "string" ? a.customIcon.trim() : ""
-            if (!rawIcon) return undefined
-            // Reject base64 data URIs - they belong in customIcons dictionary, not in group data
-            if (rawIcon.startsWith("data:image/")) return undefined
-            // 图标 URL 作为可选项：只接受 http/https；不让内部协议/运行时 endpoint 进入配置。
-            try {
-              return sanitizeUrl(rawIcon)
-            } catch {
-              return undefined
-            }
-          })()
-
-          return {
-            id,
-            name: name || "Untitled",
-            url,
-            color,
-            internalUrl: internalUrl || undefined,
-            iconStyle,
-            customText: customText || undefined,
-            customIcon,
-            // Never import large Base64 blobs into group data; customIcons restore handles that separately.
-            localIcon: undefined
-          }
-        })
-        .filter(Boolean) as any[]
-
-      return {
-        id: String(typed.id ?? `${Date.now()}-${index}`),
-        name: sanitizeName(String(typed.name ?? "")) || `分组 ${index + 1}`,
-        apps
-      }
-    })
-  }
-
-  /** 标准化导入的搜索引擎列表（仅允许 http/https，并清洗字段类型） */
-  const normalizeEngines = (raw: unknown): { id: string; name: string; url: string }[] | null => {
-    if (!Array.isArray(raw)) return null
-    const list = raw
-      .map((e, i) => {
-        const obj = e as any
-        const id = String(obj?.id ?? `custom_${Date.now()}_${i}`)
-        const name = sanitizeName(String(obj?.name ?? ""))
-        const urlRaw = String(obj?.url ?? "").trim()
-        if (!name || !urlRaw) return null
-        try {
-          const marker = "__NEUTAB_QUERY__"
-          const url = sanitizeUrl(urlRaw.replace(/%s/g, marker)).replace(new RegExp(marker, "g"), "%s")
-          return { id, name, url }
-        } catch {
-          return null
-        }
-      })
-      .filter(Boolean) as { id: string; name: string; url: string }[]
-
-    return list.length > 0 ? list : null
-  }
-
-  /** 
+  /**
    * 处理备份文件导入
-   * @description 
-   * 1. 解析 JSON 数据并提取 `data` 节点。
-   * 2. 执行数据清洗与标准化（Normalize），确保核心配置、搜索引擎及分组数据格式正确。
-   * 3. 应用数值约束（Clamp），防止不合理的布局数值导致 UI 崩溃。
-   * 4. 执行多维存储分发：常规设置存入 sync，分组数据存入 local + chunked sync，自定义图标还原至本地图标库。
    */
   const handleImport = async (file: File) => {
     try {
       const text = await file.text()
       const parsed = JSON.parse(text)
       const data = parsed?.data ?? parsed
-      const updates: Record<string, unknown> = {}
-
-      // 1) 基础设置还原
-      if ("searchEngines" in data) {
-        const engines = normalizeEngines((data as any).searchEngines)
-        if (engines) updates.searchEngines = engines
-      }
-      if ("currentEngine" in data) updates.currentEngine = String((data as any).currentEngine ?? "")
-
-      // 1.1) 主题/语言（兼容旧字段 darkMode）
-      const importedThemeMode = (() => {
-        const raw = data?.themeMode
-        if (raw === "auto" || raw === "light" || raw === "dark") return raw
-        if ("darkMode" in data) return Boolean(data.darkMode) ? "dark" : "light"
-        return undefined
-      })()
-      if (importedThemeMode) updates.themeMode = importedThemeMode
-
-      const importedVisualTheme = (() => {
-        const raw = data?.visualTheme
-        if (raw === "neumorphic" || raw === "liquid-glass") return raw
-        return undefined
-      })()
-      if (importedVisualTheme) updates.visualTheme = importedVisualTheme
-
-      const importedLanguage = (() => {
-        const raw = data?.language
-        if (raw === "zh" || raw === "en") return raw
-        return undefined
-      })()
-      if (importedLanguage) updates.language = importedLanguage
-
-      // 2) 分组数据处理
-      const importedGroups = normalizeGroups(data.quickLaunchGroups)
-      if (importedGroups) {
-        updates.quickLaunchGroups = importedGroups
-      } else if (Array.isArray(data.quickLaunchApps)) {
-        // 兼容极旧的单分组格式
-        updates.quickLaunchGroups = [
-          { id: "default", name: t.default, apps: data.quickLaunchApps }
-        ]
-      }
-
-      // 3) 组件开关
-      if ("showClock" in data) updates.showClock = Boolean(data.showClock)
-      if ("showSeconds" in data) updates.showSeconds = Boolean(data.showSeconds)
-      if ("showSearchBar" in data) updates.showSearchBar = Boolean(data.showSearchBar)
-      if ("showTopSites" in data) updates.showTopSites = Boolean(data.showTopSites)
-      if ("showRecentHistory" in data) updates.showRecentHistory = Boolean(data.showRecentHistory)
-
-      // 4) 布局数值约束 (防止导入恶意或异常数据)
-      if ("contentMaxWidth" in data) {
-        updates.contentMaxWidth = clampNumber(Number(data.contentMaxWidth), LAYOUT_LIMITS.maxWidth.min, LAYOUT_LIMITS.maxWidth.max)
-      }
-      if ("contentPaddingX" in data) {
-        updates.contentPaddingX = clampNumber(Number(data.contentPaddingX), LAYOUT_LIMITS.paddingX.min, LAYOUT_LIMITS.paddingX.max)
-      }
-      if ("contentPaddingTop" in data) {
-        updates.contentPaddingTop = clampNumber(Number(data.contentPaddingTop), LAYOUT_LIMITS.paddingTop.min, LAYOUT_LIMITS.paddingTop.max)
-      }
-      if ("contentPaddingBottom" in data) {
-        updates.contentPaddingBottom = clampNumber(Number(data.contentPaddingBottom), LAYOUT_LIMITS.paddingBottom.min, LAYOUT_LIMITS.paddingBottom.max)
-      }
-      if ("iconBorderRadius" in data) {
-        updates.iconBorderRadius = clampNumber(Number(data.iconBorderRadius), LAYOUT_LIMITS.iconBorderRadius.min, LAYOUT_LIMITS.iconBorderRadius.max)
-      }
-      if ("cardSize" in data) {
-        updates.cardSize = clampNumber(Number(data.cardSize), LAYOUT_LIMITS.cardSize.min, LAYOUT_LIMITS.cardSize.max)
-      }
-
-      if ("siteTitle" in data) updates.siteTitle = sanitizeName(String(data.siteTitle ?? ""))
-      if ("siteFavicon" in data) {
-        const rawFavicon = String(data.siteFavicon ?? "").trim()
-        const safeFavicon = (() => {
-          if (!rawFavicon) return ""
-          if (rawFavicon.startsWith("data:image/")) return rawFavicon
-          try {
-            return sanitizeUrl(rawFavicon)
-          } catch {
-            return ""
-          }
-        })()
-        updates.siteFavicon = safeFavicon
-      }
-
-      // 5) 分离保存：分组数据不应进入同步存储主 Key
-      const groupsDataRaw = updates.quickLaunchGroups as QuickLaunchGroup[] | undefined
-      delete updates.quickLaunchGroups
-
-      const groupsData = groupsDataRaw ? normalizeGroups(groupsDataRaw) : undefined
-
-      // Ensure currentEngine points to an existing engine after sanitization.
-      if (Array.isArray(updates.searchEngines)) {
-        const engines = updates.searchEngines as { id: string }[]
-        const current = typeof updates.currentEngine === "string" ? updates.currentEngine : ""
-        if (!engines.some((e) => e.id === current)) {
-          updates.currentEngine = engines[0]?.id ?? "google"
-        }
-      }
-
-      // 保存常规设置至 sync storage
-      for (const [key, value] of Object.entries(updates)) {
-        await storage.set(key, value)
-      }
-
-      // 保存分组至本地 (5MB) 与分段云存储 (Cloud Sync)
-      if (groupsData) {
-        await localExtStorage.set("quickLaunchGroups", groupsData)
-        await setChunkedData(syncStorage, "quickLaunchGroups", groupsData)
-      }
-
-      // 6) 恢复图标库 (非同步数据)
-      if (data.customIcons && typeof data.customIcons === 'object') {
-        for (const [appId, base64] of Object.entries(data.customIcons)) {
-          if (typeof base64 === 'string' && base64.startsWith('data:image/')) {
-            await localImageExtStorage.set(`icon_${appId}`, base64)
-          }
-        }
-      }
-
-      // 任务完成
-      // 同步更新首屏缓存，避免“导入成功后刷新仍闪一下/语言不跟随”的体感问题
-      commitThemeCache(
-        (updates.themeMode as ThemeMode | undefined) ?? themeMode,
-        (updates.visualTheme as VisualTheme | undefined) ?? visualTheme
-      )
-      if (typeof updates.contentMaxWidth === "number") commitLayoutCache("layout_contentMaxWidth", updates.contentMaxWidth)
-      if (typeof updates.contentPaddingX === "number") commitLayoutCache("layout_contentPaddingX", updates.contentPaddingX)
-      if (typeof updates.contentPaddingTop === "number") commitLayoutCache("layout_contentPaddingTop", updates.contentPaddingTop)
-      if (typeof updates.contentPaddingBottom === "number") commitLayoutCache("layout_contentPaddingBottom", updates.contentPaddingBottom)
-      if (typeof updates.iconBorderRadius === "number") commitLayoutCache("layout_iconBorderRadius", updates.iconBorderRadius)
-      if (typeof updates.cardSize === "number") commitLayoutCache("layout_cardSize", updates.cardSize)
-      try {
-        if ("showClock" in updates) window.localStorage.setItem("viz_clock", String(Boolean(updates.showClock)))
-        if ("showSearchBar" in updates) window.localStorage.setItem("viz_search", String(Boolean(updates.showSearchBar)))
-        if ("showSeconds" in updates) window.localStorage.setItem("viz_seconds", String(Boolean(updates.showSeconds)))
-        const lang = (updates.language as string | undefined) ?? (language as string | undefined)
-        if (lang === "zh" || lang === "en") window.localStorage.setItem("lang_cache", lang)
-      } catch {
-        // ignore
-      }
-
+      await applyImportDataToStorage(data, language || DEFAULT_SETTINGS.language)
       setImportStatus({ type: "success", message: t.importSuccess })
       if (fileInputRef.current) fileInputRef.current.value = ""
     } catch (error) {
       console.error("Import failed:", error)
       setImportStatus({ type: "error", message: t.importFailed })
     }
+  }
+
+  /**
+   * 从云端拉取配置
+   */
+  const handlePull = async () => {
+    if (!syncServerUrl || !syncAuthCode) return
+    setIsSyncing(true)
+    try {
+      await cloudPull(syncServerUrl, syncAuthCode, language || DEFAULT_SETTINGS.language)
+      const timestamp = new Date().toISOString()
+      writeCloudSyncStatus({ action: "pull", status: "success", timestamp })
+    } catch (e) {
+      const timestamp = new Date().toISOString()
+      writeCloudSyncStatus({ action: "pull", status: "failed", timestamp })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  /**
+   * 推送配置到云端
+   */
+  const handlePush = async () => {
+    if (!syncServerUrl || !syncAuthCode) return
+    setIsSyncing(true)
+    try {
+      await cloudPush(syncServerUrl, syncAuthCode, language || DEFAULT_SETTINGS.language)
+      const timestamp = new Date().toISOString()
+      writeCloudSyncStatus({ action: "push", status: "success", timestamp })
+    } catch (e) {
+      const timestamp = new Date().toISOString()
+      writeCloudSyncStatus({ action: "push", status: "failed", timestamp })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  /** 确认对话框回调 */
+  const handleConfirmAction = () => {
+    if (!confirmDialog) return
+    if (confirmDialog.action === 'pull') {
+      handlePull()
+    } else {
+      handlePush()
+    }
+    setConfirmDialog(null)
   }
 
   // 渲染 JSX
@@ -1296,11 +1080,148 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
                     {importStatus.message}
                   </div>
                 )}
+
+                {/* 云同步区域 */}
+                <div className="settings-island sync-section">
+                  <label className="island-row">
+                    <div className="row-left">
+                      <div className="row-icon icon-sync">
+                        <FiCloud size={18} />
+                      </div>
+                      <div className="row-text">
+                        <span className="row-title">{t.cloudSync}</span>
+                        <span className="row-desc">{t.cloudSyncDesc}</span>
+                      </div>
+                    </div>
+                    <div className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={syncEnabled}
+                        onChange={() => setSyncEnabled(!syncEnabled)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </div>
+                  </label>
+
+                  {syncEnabled && (
+                    <>
+                      <div className="settings-field">
+                        <label>{t.syncServerUrl}</label>
+                        <input
+                          type="text"
+                          className="settings-input soft-in"
+                          placeholder="https://neutab.example.com"
+                          value={syncServerUrl}
+                          onChange={(e) => setSyncServerUrl(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="settings-field">
+                        <label>{t.syncAuthCode}</label>
+                        <div className="input-with-toggle">
+                          <input
+                            type={showAuthCode ? "text" : "password"}
+                            className="settings-input soft-in"
+                            placeholder="••••••••"
+                            value={syncAuthCode}
+                            onChange={(e) => setSyncAuthCode(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="input-toggle-btn"
+                            onClick={() => setShowAuthCode(!showAuthCode)}
+                            aria-label={showAuthCode ? "Hide" : "Show"}
+                          >
+                            {showAuthCode ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <label className="island-row">
+                        <div className="row-left">
+                          <div className="row-icon icon-auto-sync">
+                            <FiRefreshCw size={18} />
+                          </div>
+                          <div className="row-text">
+                            <span className="row-title">{t.autoSync}</span>
+                            <span className="row-desc">{t.autoSyncDesc}</span>
+                          </div>
+                        </div>
+                        <div className="toggle-switch">
+                          <input
+                            type="checkbox"
+                            checked={autoSyncEnabled}
+                            onChange={() => setAutoSyncEnabled(!autoSyncEnabled)}
+                          />
+                          <span className="toggle-slider"></span>
+                        </div>
+                      </label>
+
+                      <div className="sync-actions">
+                        <button
+                          type="button"
+                          className="sync-btn soft-out"
+                          onClick={() => setConfirmDialog({ action: 'pull' })}
+                          disabled={isSyncing || !syncServerUrl || !syncAuthCode}
+                        >
+                          <FiDownload size={16} />
+                          <span>{t.manualPull}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="sync-btn soft-out"
+                          onClick={() => setConfirmDialog({ action: 'push' })}
+                          disabled={isSyncing || !syncServerUrl || !syncAuthCode}
+                        >
+                          <FiUpload size={16} />
+                          <span>{t.manualPush}</span>
+                        </button>
+                      </div>
+
+                      <div className="sync-status-row">
+                        <span className="sync-status-label">{t.lastSyncTime}:</span>
+                        <span className={`sync-status-value ${lastSyncStatus}`}>
+                          {isSyncing
+                            ? t.syncing
+                            : lastSyncTime
+                              ? `${new Date(lastSyncTime).toLocaleString()} ${lastSyncStatus === 'success' ? '✓' : lastSyncStatus === 'failed' ? '✗' : ''}`
+                              : t.neverSynced}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </section>
             )}
           </div>
         </div>
       </div>
+
+      {/* 确认对话框 */}
+      {confirmDialog && (
+        <div className="confirm-dialog-overlay" onClick={() => setConfirmDialog(null)}>
+          <div className="confirm-dialog soft-out" onClick={(e) => e.stopPropagation()}>
+            <h4 className="confirm-dialog-title">{t.confirmOverwriteTitle}</h4>
+            <p className="confirm-dialog-message">{t.confirmOverwrite}</p>
+            <div className="confirm-dialog-actions">
+              <button
+                type="button"
+                className="confirm-dialog-btn cancel soft-out"
+                onClick={() => setConfirmDialog(null)}
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                className="confirm-dialog-btn confirm soft-out"
+                onClick={handleConfirmAction}
+              >
+                {t.confirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

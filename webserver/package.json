@@ -1,0 +1,14 @@
+{
+  "name": "neutab-web",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:all": "cd .. && pnpm install",
+    "build:shared": "cd .. && pnpm --filter @neutab/shared build && pnpm --filter @neutab/ui build",
+    "build:client": "cd .. && pnpm --filter neutab-web-client build",
+    "build:server": "cd .. && pnpm --filter neutab-web-server build",
+    "build": "pnpm run build:shared && pnpm run build:client && pnpm run build:server",
+    "start": "cd .. && pnpm --filter neutab-web-server start"
+  }
+}

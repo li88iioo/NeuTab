@@ -11,7 +11,7 @@
 
 import { Storage } from "@plasmohq/storage"
 import LZString from "lz-string"
-import { logger } from "./logger"
+import { logger } from "@neutab/shared/utils/logger"
 
 // Chrome sync 的单项配额通常约为 8KB，但配额统计单位是“字节”（BYTES），不是 JS 字符串的 length。
 //

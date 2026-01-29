@@ -1,0 +1,38 @@
+{
+  "name": "@neutab/ui",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./components/*.css": "./dist/components/*.css",
+    "./components/*": {
+      "types": "./dist/components/*.d.ts",
+      "default": "./dist/components/*.js"
+    },
+    "./styles/*": "./dist/styles/*",
+    "./assets/*": "./dist/assets/*",
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "default": "./dist/utils/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@neutab/shared": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ./scripts/copy-static.mjs"
+  }
+}

@@ -1,0 +1,1094 @@
+/* ============================================
+   Settings Panel - Island Design System
+   核心理念：同类设置归纳到一个"岛屿"容器中
+   ============================================ */
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  z-index: 3000;
+}
+
+.settings-panel {
+  /* Desktop: keep the panel around ~2/3 viewport width, with a reasonable max. */
+  width: min(66vw, 820px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  /* Hide native scrollbars (keep scroll behavior).
+     Why: in a compact desktop window the panel becomes scrollable and the default scrollbar breaks the "glass/neumorphic" look. */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* legacy Edge/IE */
+  padding: 30px;
+  border-radius: 24px;
+  text-align: left;
+  transform: none !important;
+  will-change: auto !important;
+  display: flex;
+  flex-direction: column;
+  --settings-header-btn-size: 38px;
+  --settings-top-nav-gap: 12px;
+}
+
+.settings-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.settings-panel.soft-out:hover,
+.settings-panel.soft-out:active {
+  transform: none !important;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.settings-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* ============================================
+   Top Navigation (Header)
+   ============================================ */
+
+.settings-top-nav-wrap {
+  flex: 1;
+  min-width: 0;
+  /* Horizontal scroll without clipping the button shadows (give them padding to render into). */
+  overflow-x: auto;
+  /* soft-out shadow extents can be ~offset(8)+blur(16)=24px, so keep >=24px padding */
+  padding: 26px 16px;
+  margin: -26px -16px;
+  scrollbar-width: none;
+}
+
+.settings-top-nav-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-top-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--settings-top-nav-gap);
+  /* prevent shadows from visually "merging" into a bar */
+  padding: 0;
+}
+
+.settings-top-nav-btn {
+  width: var(--settings-header-btn-size);
+  height: var(--settings-header-btn-size);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.settings-top-nav-btn:hover {
+  color: var(--accent);
+}
+
+/* Keep icon buttons visually stable (no hover lift), matching header buttons feel. */
+.settings-top-nav-btn.soft-out:hover:not(:active) {
+  transform: none;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+}
+
+.settings-top-nav-btn:active {
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.settings-top-nav-btn.active {
+  color: var(--accent);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.settings-top-nav-btn .nav-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 10px;
+}
+
+.settings-menu-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+}
+
+.settings-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--txt-primary);
+}
+
+.settings-close {
+  width: var(--settings-header-btn-size);
+  height: var(--settings-header-btn-size);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  transition: all 0.2s ease;
+}
+
+.settings-close:hover {
+  color: var(--accent);
+}
+
+/* Theme toggle button in header */
+.settings-theme-btn,
+.settings-lang-btn {
+  width: var(--settings-header-btn-size);
+  height: var(--settings-header-btn-size);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  transition: all 0.2s ease;
+}
+
+.settings-theme-btn:hover,
+.settings-lang-btn:hover {
+  color: var(--accent);
+}
+
+/* Disable hover lift animation for header buttons */
+.settings-theme-btn.soft-out:hover:not(:active),
+.settings-lang-btn.soft-out:hover:not(:active),
+.settings-close.soft-out:hover:not(:active) {
+  transform: none !important;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-dark),
+    calc(-1 * var(--shadow-offset)) calc(-1 * var(--shadow-offset)) var(--shadow-blur) var(--shadow-light);
+}
+
+.settings-theme-btn:active,
+.settings-lang-btn:active {
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+/* ============================================
+   Body Layout
+   ============================================ */
+
+.settings-body {
+  display: flex;
+  gap: 24px;
+}
+
+/* ============================================
+   Navigation
+   ============================================ */
+
+.settings-nav {
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+}
+
+.settings-nav-btn {
+  border: none;
+  padding: 12px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--txt-secondary);
+  text-align: left;
+  font-family: inherit;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.settings-nav-btn:hover:not(.active) {
+  color: var(--txt-primary);
+  background: transparent;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+
+.settings-nav-btn.active {
+  color: var(--txt-primary);
+  font-weight: 700;
+  background: var(--bg);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.settings-nav-btn.active .nav-icon {
+  box-shadow: 2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+}
+
+/* ============================================
+   Content Area with Animation
+   ============================================ */
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 内容切换动画 */
+.settings-section {
+  animation: sectionFadeIn 0.3s ease-out;
+}
+
+@keyframes sectionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-section h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--txt-secondary);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   Island Container (岛屿容器)
+   ============================================ */
+
+.settings-island {
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 6px;
+  margin-bottom: 20px;
+  box-shadow: 8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Two islands side by side */
+.settings-island-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.settings-island-row .settings-island-half {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 500px) {
+  .settings-island-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* ============================================
+   Island Row (岛屿内的行)
+   ============================================ */
+
+.island-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.island-row:hover {
+  background: transparent;
+}
+
+.island-row:active {
+  background: transparent;
+}
+
+/* 分割线 */
+.island-row:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark .island-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body.dark .island-row:hover {
+  background: transparent;
+}
+
+/* 禁用行的悬停效果 */
+.island-row.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.island-row.disabled:hover {
+  background: transparent;
+}
+
+/* Island Row Group - 多个设置项一行显示 */
+.island-row-group {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.island-row-group .island-row.compact {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: inset 2px 2px 4px var(--shadow-dark),
+    inset -2px -2px 4px var(--shadow-light);
+}
+
+.island-row-group .island-row.compact:hover {
+  background: var(--bg);
+}
+
+.island-row-group .island-row.compact .row-left {
+  gap: 10px;
+}
+
+.island-row-group .island-row.compact .row-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.island-row-group .island-row.compact .row-title {
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   Row Content
+   ============================================ */
+
+.row-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  /* allow text to shrink/wrap on small screens */
+}
+
+.row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--txt-secondary);
+}
+
+.row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  /* critical for flex overflow in EN */
+}
+
+.row-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--txt-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.row-desc {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--txt-secondary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* ============================================
+   Toggle Switch (开关)
+   ============================================ */
+
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 2px 2px 4px var(--shadow-dark),
+    -2px -2px 4px var(--shadow-light);
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+  background: rgba(108, 92, 231, 0.15);
+}
+
+.toggle-switch input:checked+.toggle-slider::before {
+  transform: translateX(22px);
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.toggle-switch input:disabled+.toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Language Select
+   ============================================ */
+
+.language-select {
+  position: relative;
+  min-width: 110px;
+}
+
+.language-select-btn {
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  color: var(--txt-primary);
+  outline: none;
+  border: none;
+  font-family: inherit;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.language-select-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.language-select-arrow {
+  font-size: 0.7rem;
+  color: var(--txt-secondary);
+  transition: transform 0.2s ease;
+}
+
+.language-select-arrow.open {
+  transform: rotate(180deg);
+}
+
+.language-select-options {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 8px;
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 8px;
+  list-style: none;
+  z-index: 20;
+  min-width: 120px;
+}
+
+.language-select-option {
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+  color: var(--txt-primary);
+}
+
+.language-select-option:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--accent);
+}
+
+body.dark .language-select-option:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.language-select-option.selected {
+  background: var(--bg);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+  color: var(--accent);
+}
+
+/* ============================================
+   Input Fields
+   ============================================ */
+
+.settings-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  color: var(--txt-primary);
+  outline: none;
+  border: none;
+  font-family: inherit;
+}
+
+.settings-field {
+  padding: 16px 18px;
+}
+
+.settings-field label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--txt-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   Range Input
+   ============================================ */
+
+.settings-range {
+  width: 100%;
+  height: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+  cursor: pointer;
+}
+
+.settings-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+  border: none;
+  cursor: grab;
+}
+
+.settings-range::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+.settings-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+  border: none;
+  cursor: grab;
+}
+
+.settings-range::-moz-range-track {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+/* ============================================
+   Site Preview Card
+   ============================================ */
+
+.site-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.site-preview-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+}
+
+.site-preview-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.site-preview-info h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+
+.site-preview-info p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: var(--txt-secondary);
+}
+
+/* ============================================
+   Groups Management
+   ============================================ */
+
+.group-add {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.group-add .settings-input {
+  flex: 1;
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: 4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-row .settings-input {
+  flex: 1;
+  padding: 10px 14px;
+}
+
+.group-move {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+  background: var(--bg);
+  box-shadow: 3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.icon-btn:active:not(:disabled) {
+  box-shadow: inset 2px 2px 4px var(--shadow-dark),
+    inset -2px -2px 4px var(--shadow-light);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.icon-btn.delete:hover:not(:disabled) {
+  color: #e74c3c;
+}
+
+.icon-btn.confirm {
+  color: #2ecc71;
+}
+
+.icon-btn.cancel {
+  color: var(--txt-secondary);
+}
+
+.group-confirm-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.settings-btn {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--txt-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  background: var(--bg);
+  box-shadow: 4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.settings-btn:hover {
+  color: var(--accent);
+}
+
+.settings-btn:active {
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+/* ============================================
+   Backup Grid
+   ============================================ */
+
+.backup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.backup-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  text-align: center;
+  gap: 14px;
+  color: var(--txt-primary);
+  background: var(--bg);
+  box-shadow: 6px 6px 12px var(--shadow-dark),
+    -6px -6px 12px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.backup-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light);
+}
+
+.backup-card:active {
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+}
+
+.backup-card .backup-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-secondary);
+}
+
+.backup-card h4 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.backup-card p {
+  font-size: 0.8rem;
+  color: var(--txt-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.backup-status {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backup-status.success {
+  background: rgba(46, 204, 113, 0.1);
+  color: #27ae60;
+}
+
+.backup-status.error {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+/* ============================================
+   Card Preview Layout (卡片预览+双滑块)
+   ============================================ */
+
+.card-preview-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  padding: 16px 18px;
+}
+
+.card-preview-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.card-preview-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-preview-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.card-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--txt-secondary);
+}
+
+.card-preview-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--txt-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.card-preview-sliders {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+@media (max-width: 500px) {
+  .card-preview-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card-preview-sliders {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 700px) {
+
+  /* Mobile/compact width: make Settings full-bleed horizontally, but keep the original top/bottom spacing.
+     Why: the overlay padding (40/20) creates side gutters, which feels "not full width" on narrow screens. */
+  .settings-overlay {
+    /* Keep vertical padding (40px) but remove horizontal padding. */
+    padding-top: 40px;
+    padding-bottom: 40px;
+    /* Keep a tiny 2px gutter while still respecting safe areas (notches/rounded corners). */
+    padding-left: max(2px, env(safe-area-inset-left));
+    padding-right: max(2px, env(safe-area-inset-right));
+    align-items: center;
+    justify-content: center;
+  }
+
+  .settings-panel {
+    padding: 0;
+    width: 100%;
+    max-width: none;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    --settings-header-btn-size: 32px;
+    --settings-top-nav-gap: 8px;
+  }
+
+  .settings-header {
+    /* Include safe-area insets for "mobile-like" environments; desktop evaluates to 0. */
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: 10px;
+    padding-left: max(20px, env(safe-area-inset-left));
+    margin-bottom: 0;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+  }
+
+  /* Keep everything on one row on mobile; shrink buttons instead of wrapping. */
+  .settings-top-nav-wrap {
+    padding: 22px 12px;
+    margin: -22px -12px;
+  }
+
+  .settings-menu-btn {
+    display: none;
+  }
+
+  .settings-body {
+    flex-direction: column;
+    position: static;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .settings-content {
+    padding-top: 0;
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: max(20px, env(safe-area-inset-left));
+    overflow-y: auto;
+    height: 100%;
+    /* Mobile scroll container: keep it consistent with desktop (no visible scrollbar). */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-content::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* Side nav is removed in favor of the top nav. */
+
+  .group-add {
+    flex-direction: column;
+  }
+
+  .backup-grid {
+    grid-template-columns: 1fr;
+  }
+}

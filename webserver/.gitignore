@@ -1,0 +1,21 @@
+# Environment
+.env
+
+# Runtime data
+data/*.db
+data/*.db-*
+data/storage.json*
+data/*.migrated
+data/icons/*
+!data/icons/.gitkeep
+server/data/
+data/favicon-cache/
+server/data/favicon-cache/
+# Dependencies
+node_modules
+client/node_modules
+server/node_modules
+
+# Build outputs
+client/dist
+server/dist

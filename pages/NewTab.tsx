@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowUp, FiSettings } from "react-icons/fi"
-import Header from "~components/header/Header"
+import { ErrorBoundary, Header } from "@neutab/ui"
 import SearchBar from "~components/search/SearchBar"
 import QuickLaunch from "~components/quick-launch/QuickLaunch"
-import ErrorBoundary from "~components/common/ErrorBoundary"
 import SettingsPanel from "~components/settings/SettingsPanel"
-import { DEFAULT_SETTINGS, type ThemeMode, type VisualTheme } from "~utils/settings"
-import { getTranslations, type Language } from "~utils/i18n"
-import "~styles/style.css"
-import "~styles/themes/liquid-glass.css"
-import { applyLayoutVariables, applyThemeClasses } from "~utils/theme"
-import { sanitizeUrl } from "~utils/validation"
+import CloudSyncAgent from "~components/sync/CloudSyncAgent"
+import { DEFAULT_SETTINGS, type ThemeMode, type VisualTheme } from "@neutab/shared/utils/settings"
+import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
+import "@neutab/ui/styles/style.css"
+import "@neutab/ui/styles/themes/liquid-glass.css"
+import { applyLayoutVariables, applyThemeClasses } from "@neutab/shared/utils/theme"
+import { sanitizeUrl } from "@neutab/shared/utils/validation"
 
 // 同步读取 localStorage 避免闪烁
 /**
@@ -375,6 +375,7 @@ function NewTab() {
 
   return (
     <ErrorBoundary language={resolvedLanguage}>
+      <CloudSyncAgent />
       <div className={`main-container ${!isContentReady ? 'content-loading' : ''}`}>
         <div className="layout-section-header">
           <Header enabled={!!showClock} showSeconds={!!showSeconds} language={resolvedLanguage} />

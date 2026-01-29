@@ -1,0 +1,17 @@
+# Runtime data (should be mounted, not baked into the image)
+data/
+server/data/
+
+# Dependencies / build outputs
+client/node_modules/
+server/node_modules/
+client/dist/
+server/dist/
+
+# Local env
+.env
+
+# Misc
+*.log
+.DS_Store
+
