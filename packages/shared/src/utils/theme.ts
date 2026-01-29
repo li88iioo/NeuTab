@@ -59,7 +59,6 @@ export const applyThemeClasses = (
     visualTheme: VisualTheme | undefined,
     opts?: { cleanupEarlyFallback?: boolean }
 ) => {
-    markThemeSwitching()
     const mode = themeMode ?? DEFAULT_SETTINGS.themeMode
     const theme = visualTheme ?? DEFAULT_SETTINGS.visualTheme
 
@@ -74,6 +73,18 @@ export const applyThemeClasses = (
     } else {
         isDark = prefersDark
     }
+
+    // Only add `theme-switching` when a *real* theme result changes.
+    // Calling `applyThemeClasses()` multiple times during boot (restoreTheme/preloadTheme/React effect)
+    // should NOT temporarily remove shadows, otherwise the SearchBar `.soft-in` shadow "flashes".
+    const nextKey = `${mode}|${theme}|${isDark ? "1" : "0"}`
+    const prevKey = (globalThis as any).__NEUTAB_THEME_KEY__ as string | undefined
+    const isBooting = document.body.classList.contains("no-transition")
+
+    if (!isBooting && prevKey && prevKey !== nextKey) {
+        markThemeSwitching()
+    }
+    ;(globalThis as any).__NEUTAB_THEME_KEY__ = nextKey
 
     // 应用深色模式 Class
     if (isDark) {
