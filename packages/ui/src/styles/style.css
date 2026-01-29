@@ -253,6 +253,32 @@ body {
   outline: none;
 }
 
+/* LOD: prioritize frame stability during high-frequency interactions (drag/scroll/type). */
+body.perf-interacting .soft-out,
+body.perf-interacting .soft-in,
+body.perf-interacting .app-card,
+body.perf-interacting .ql-context-menu,
+body.perf-interacting .search-suggestions,
+body.perf-interacting .settings-panel,
+body.perf-interacting .ql-modal-content,
+body.perf-interacting .search-modal-content {
+  transition: none !important;
+}
+
+body.perf-interacting .soft-out {
+  /* Keep the neumorphic feel, but reduce blur radius and repaints under interaction. */
+  box-shadow: 2px 2px 6px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+}
+
+body.perf-interacting .soft-in {
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+}
+
+body.perf-interacting .soft-out:hover {
+  transform: none !important;
+  will-change: auto !important;
+}
+
 .soft-out:focus {
   outline: none !important;
 }

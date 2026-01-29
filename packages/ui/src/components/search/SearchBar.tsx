@@ -21,6 +21,7 @@ import { DEFAULT_SETTINGS } from "@neutab/shared/utils/settings"
 import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import { getBrowserFaviconUrl } from "@neutab/shared/utils/favicon"
 import { logger } from "@neutab/shared/utils/logger"
+import { pulsePerfInteracting } from "@neutab/shared/utils/perfLod"
 import { ensureChromePermission } from "@neutab/shared/utils/permissions"
 import type { QuickLaunchGroup, QuickLaunchApp } from "@neutab/shared/types/quickLaunch"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
@@ -482,6 +483,7 @@ const SearchBarInner = () => {
   const suggestionsVisible = suggestionsOpen && !!query.trim() && suggestions.length > 0
 
   const handleInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    pulsePerfInteracting()
     if (!suggestionsVisible) return
 
     if (e.key === "Escape") {
@@ -672,7 +674,10 @@ const SearchBarInner = () => {
           className="search-input"
           placeholder={t.searchPlaceholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            pulsePerfInteracting()
+            setQuery(e.target.value)
+          }}
           onKeyDown={handleInputKeyDown}
           onFocus={() => {
             if (query.trim()) setSuggestionsOpen(true)

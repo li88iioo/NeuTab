@@ -20,6 +20,10 @@
     "paths": {
       "~/*": ["./src/*"],
       "~*": ["./src/*"],
+      "@neutab/shared": ["../../packages/shared/src/index.ts"],
+      "@neutab/shared/*": ["../../packages/shared/src/*"],
+      "@neutab/ui": ["../../packages/ui/src/index.ts"],
+      "@neutab/ui/*": ["../../packages/ui/src/*"],
       "@plasmohq/storage": ["./src/shims/storage.ts"],
       "@plasmohq/storage/hook": ["./src/shims/storage.ts"]
     },

@@ -15,9 +15,6 @@
     "package:firefox": "pnpm build:firefox && node node_modules/plasmo/bin/index.mjs package --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.0.8",
-    "@dnd-kit/sortable": "^7.0.2",
-    "@dnd-kit/utilities": "^3.2.1",
     "@neutab/shared": "workspace:*",
     "@neutab/ui": "workspace:*",
     "@plasmohq/storage": "^1.9.0",

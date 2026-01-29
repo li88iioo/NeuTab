@@ -18,9 +18,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "paths": {
-      "~*": [
-        "./*"
-      ]
+      "~*": ["./*"],
+      "@neutab/shared": ["./packages/shared/src/index.ts"],
+      "@neutab/shared/*": ["./packages/shared/src/*"],
+      "@neutab/ui": ["./packages/ui/src/index.ts"],
+      "@neutab/ui/*": ["./packages/ui/src/*"]
     }
   },
   "include": [

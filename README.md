@@ -199,6 +199,38 @@ pnpm -w rebuild better-sqlite3
 
 ---
 
+## 常见问题（FAQ）
+
+### 移动端拖拽与菜单
+
+**Q: 移动端如何拖拽排序？为什么我没看到菜单就能拖动？**  
+A: 这是刻意的交互设计：为了让拖拽更顺滑，移动端的“排序拖拽”会在菜单出现之前进入可拖状态。通常流程是：
+- 按住卡片约 0.35s 后开始移动，即进入拖拽排序
+- 进入拖拽后不会弹出菜单（避免冲突）
+
+**Q: 移动端如何呼出快捷方式菜单？**  
+A: 长按卡片并保持基本不移动，约 0.65s 会弹出菜单（编辑/删除/打开等）。
+
+### 图标/拖拽相关
+
+**Q: 为什么拖拽时会出现“只拖着网站图标在动”的情况？**  
+A: 这是浏览器的“原生图片拖拽”行为（img draggable）。项目已主动禁用该行为；如果你仍看到图标被单独拖动，请尝试刷新页面或重载扩展。
+
+### 视觉与性能
+
+**Q: 拟态主题滚动时卡片看起来会“下沉/贴回背景”，是 Bug 吗？**  
+A: 不是 Bug。为了保证高刷设备上的流畅度，滚动/拖拽/输入等高频交互期间会启用性能 LOD（短暂降低阴影/玻璃等昂贵效果），停止交互后会自动恢复完整视觉。
+
+**Q: Liquid Glass 主题拖拽/滚动时为什么会变“更实心”，模糊变弱或消失？**  
+A: 同样是性能 LOD：交互期会临时关闭 `backdrop-filter` 与部分光晕效果，以降低合成与 GPU 压力，避免掉帧。
+
+### Web 版本权限
+
+**Q: “经常访问 / 最近历史 / 书签搜索”为什么可能为空？**  
+A: 这些能力依赖浏览器 API 与权限（如 `topSites` / `history` / `bookmarks`）。在部分环境（尤其 Web 版本、隐私模式或未授权）下会被限制或不可用。
+
+---
+
 ## 反馈与贡献
 
 如果在使用过程中遇到任何问题，或有新的功能建议，欢迎提交 [Issue](https://github.com/li88iioo/NeuTab/issues)，或 fork 进行开发。
@@ -270,6 +302,13 @@ See [webserver/README.md](webserver/README.md) for detailed configuration.
 ### Feedback & Contribution
 
 If you encounter any issues or have feature suggestions, please feel free to submit an [Issue](https://github.com/li88iioo/NeuTab/issues).
+
+### FAQ
+
+- Mobile drag starts before the context menu: hold briefly, then move to reorder.
+- Mobile context menu: long-press and keep still to open actions (edit/delete/open).
+- During scroll/drag/type, NeuTab may temporarily reduce shadows/blur for smoothness; visuals restore after interaction.
+- Top Sites / History / Bookmarks may be unavailable depending on browser support and permissions.
 
 ### License
 

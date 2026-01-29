@@ -119,6 +119,8 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
           className="remote-favicon"
           loading="lazy"
           decoding="async"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
           onError={() => setSrcIndex((i) => i + 1)}
         />
       </div>

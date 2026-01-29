@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowUp, FiSettings } from "react-icons/fi"
 import AuthGate from "./AuthGate"
 import { ErrorBoundary, Header } from "@neutab/ui"
 import SearchBar from "~/components/search/SearchBar"
 import QuickLaunch from "~/components/quick-launch/QuickLaunch"
-import SettingsPanel from "~/components/settings/SettingsPanel"
 import { DEFAULT_SETTINGS, type ThemeMode, type VisualTheme } from "@neutab/shared/utils/settings"
 import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import "@neutab/ui/styles/style.css"
 import "@neutab/ui/styles/themes/liquid-glass.css"
 import { applyLayoutVariables, applyThemeClasses } from "@neutab/shared/utils/theme"
+import { beginPerfInteracting } from "@neutab/shared/utils/perfLod"
 import { sanitizeUrl } from "@neutab/shared/utils/validation"
+
+const SettingsPanel = lazy(() => import("~/components/settings/SettingsPanel"))
 
 const getInitialVisibility = (key: string, defaultValue: boolean): boolean => {
   try {
@@ -26,6 +28,17 @@ const getInitialLanguage = (defaultValue: Language): Language => {
   try {
     const cached = localStorage.getItem("lang_cache")
     return cached === "en" || cached === "zh" ? cached : defaultValue
+  } catch {
+    return defaultValue
+  }
+}
+
+const getInitialSiteTitle = (defaultValue: string): string => {
+  try {
+    const cached = localStorage.getItem("site_title_cache")
+    if (!cached) return defaultValue
+    const t = cached.trim()
+    return t ? t : defaultValue
   } catch {
     return defaultValue
   }
@@ -49,7 +62,7 @@ function NewTabContent() {
   const [iconBorderRadius, , { isLoading: loadingRadius }] = useStorage("iconBorderRadius", DEFAULT_SETTINGS.iconBorderRadius)
   const [cardSize, , { isLoading: loadingCardSize }] = useStorage("cardSize", DEFAULT_SETTINGS.cardSize)
 
-  const [siteTitle] = useStorage("siteTitle", DEFAULT_SETTINGS.siteTitle)
+  const [siteTitle] = useStorage("siteTitle", getInitialSiteTitle(DEFAULT_SETTINGS.siteTitle))
   const [siteFavicon] = useStorage("siteFavicon", DEFAULT_SETTINGS.siteFavicon)
 
   const [showSettings, setShowSettings] = useState(false)
@@ -130,6 +143,11 @@ function NewTabContent() {
     }
     const title = siteTitle?.trim() || defaultTitleRef.current || ""
     if (title) document.title = title
+    try {
+      if (title) localStorage.setItem("site_title_cache", title)
+    } catch {
+      // ignore
+    }
   }, [siteTitle])
 
   useEffect(() => {
@@ -175,6 +193,9 @@ function NewTabContent() {
   const scrollStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isScrollingRef = useRef(false)
   const lastScrollContainerRef = useRef<EventTarget | null>(null)
+  const scrollPerfReleaseRef = useRef<(() => void) | null>(null)
+  const scrollPerfStartRef = useRef(0)
+  const scrollPerfReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const blurFloatingButtonsIfFocused = () => {
@@ -214,16 +235,37 @@ function NewTabContent() {
 
       if (e?.target) lastScrollContainerRef.current = e.target
 
+      if (scrollPerfReleaseTimerRef.current) {
+        clearTimeout(scrollPerfReleaseTimerRef.current)
+        scrollPerfReleaseTimerRef.current = null
+      }
+
       if (!isScrollingRef.current) {
         blurFloatingButtonsIfFocused()
         isScrollingRef.current = true
         setIsScrolling(true)
+        scrollPerfReleaseRef.current?.()
+        scrollPerfReleaseRef.current = beginPerfInteracting()
+        scrollPerfStartRef.current = performance.now()
       }
       if (scrollStopTimerRef.current) clearTimeout(scrollStopTimerRef.current)
       scrollStopTimerRef.current = setTimeout(() => {
         isScrollingRef.current = false
         setIsScrolling(false)
-      }, 150)
+        const MIN_HOLD_MS = 280
+        const elapsed = performance.now() - scrollPerfStartRef.current
+        const remaining = Math.max(0, MIN_HOLD_MS - elapsed)
+        if (remaining > 0) {
+          scrollPerfReleaseTimerRef.current = setTimeout(() => {
+            scrollPerfReleaseTimerRef.current = null
+            scrollPerfReleaseRef.current?.()
+            scrollPerfReleaseRef.current = null
+          }, remaining)
+        } else {
+          scrollPerfReleaseRef.current?.()
+          scrollPerfReleaseRef.current = null
+        }
+      }, 220)
 
       if (scrollRafRef.current != null) return
       scrollRafRef.current = window.requestAnimationFrame(() => {
@@ -275,8 +317,12 @@ function NewTabContent() {
       document.removeEventListener("gesturechange", preventGestureZoom as EventListener)
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
       if (scrollStopTimerRef.current) clearTimeout(scrollStopTimerRef.current)
+      if (scrollPerfReleaseTimerRef.current) clearTimeout(scrollPerfReleaseTimerRef.current)
       if (activityRafRef.current != null) window.cancelAnimationFrame(activityRafRef.current)
       if (scrollRafRef.current != null) window.cancelAnimationFrame(scrollRafRef.current)
+      scrollPerfReleaseRef.current?.()
+      scrollPerfReleaseRef.current = null
+      scrollPerfReleaseTimerRef.current = null
     }
   }, [])
 
@@ -339,7 +385,9 @@ function NewTabContent() {
       </button>
 
       {showSettings && (
-        <SettingsPanel onClose={() => setShowSettings(false)} />
+        <Suspense fallback={null}>
+          <SettingsPanel onClose={() => setShowSettings(false)} />
+        </Suspense>
       )}
     </ErrorBoundary>
   )

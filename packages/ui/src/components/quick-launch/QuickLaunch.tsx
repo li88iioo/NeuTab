@@ -1,17 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
-import {
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from "@dnd-kit/core"
-import {
-  arrayMove,
-  sortableKeyboardCoordinates
-} from "@dnd-kit/sortable"
 import BodyPortal from "./BodyPortal"
 import QuickLaunchContextMenu, { type QuickLaunchMenuAction } from "./QuickLaunchContextMenu"
 import QuickLaunchGroupList from "./QuickLaunchGroupList"
@@ -29,6 +17,14 @@ import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import { isAllowedNavigationUrl, sanitizeInternalUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
 import { logger } from "@neutab/shared/utils/logger"
 import "./QuickLaunch.css"
+
+const arrayMove = <T,>(arr: T[], from: number, to: number): T[] => {
+  if (from === to) return arr.slice()
+  const next = arr.slice()
+  const [item] = next.splice(from, 1)
+  next.splice(to, 0, item)
+  return next
+}
 
 /**
  * 快捷启动主组件
@@ -93,7 +89,7 @@ export default function QuickLaunch({
   const [showRecentHistory] = useStorage("showRecentHistory", DEFAULT_SETTINGS.showRecentHistory)
 
   /** 卡片大小:优先从缓存读取以保证首屏无跳变 */
-  const [cardSize, , { isLoading: loadingCardSize }] = useStorage(
+  const [cardSize, , { isLoading: loadingCardSize }] = useStorage<number>(
     "cardSize",
     (v) => {
       // 优先使用storage中的值
@@ -158,83 +154,21 @@ export default function QuickLaunch({
     customIcon: ""
   })
 
-  /** DND Kit 传感器配置：鼠标/触摸都必须移动才能拖拽 */
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 8
-      }
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        // 延迟 600ms 以优先触发右键菜单（防止长按静止时卡片突跳）
-        // 增加容差到 20px，允许长按期间手指微动，避免过于灵敏导致拖拽取消
-        delay: 600,
-        tolerance: 20
-      }
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
-  )
-
   /**
-   * 处理拖动结束事件
-   * @description 仅在常规分组内支持排序。使用 arrayMove 更新分组内的 apps 顺序。
+   * 处理拖拽重排（拖拽期间旁路 React；仅在 drop 时 commit 一次 setGroups）。
    */
-  const handleDragEnd = (event: DragEndEvent, groupId: string) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-
+  const handleReorder = (groupId: string, fromIndex: number, toIndex: number) => {
     setGroups((items) => {
       const current = items?.length ? items : DEFAULT_GROUPS
       return current.map((group) => {
         if (group.id !== groupId) return group
-        const oldIndex = group.apps.findIndex((item) => item.id === String(active.id))
-        const newIndex = group.apps.findIndex((item) => item.id === String(over.id))
-        if (oldIndex < 0 || newIndex < 0) {
-          logger.warn("[QuickLaunch] Invalid drag indices", {
-            groupId,
-            activeId: String(active.id),
-            overId: String(over.id)
-          })
-          return group
-        }
         return {
           ...group,
-          apps: arrayMove(group.apps, oldIndex, newIndex)
+          apps: arrayMove(group.apps, fromIndex, toIndex)
         }
       })
     })
   }
-
-  const setDraggingClass = (isDragging: boolean) => {
-    if (typeof document === "undefined") return
-    document.body.classList.toggle("dragging-app-card", isDragging)
-  }
-
-  const handleDragStart = () => {
-    setDraggingClass(true)
-  }
-
-  const handleDragCancel = () => {
-    setDraggingClass(false)
-  }
-
-  const handleDragEndWithCleanup = (event: DragEndEvent, groupId: string) => {
-    handleDragEnd(event, groupId)
-    setDraggingClass(false)
-  }
-
-  const handleDragMove = () => {
-    if (contextMenu.visible) closeContextMenu()
-  }
-
-  useEffect(() => {
-    return () => {
-      setDraggingClass(false)
-    }
-  }, [])
 
   /**
    * 处理右键菜单弹出
@@ -459,11 +393,10 @@ export default function QuickLaunch({
       <QuickLaunchGroupList
         groups={displayGroups}
         maxColumns={maxColumns}
-        sensors={sensors}
-        onDragEnd={handleDragEndWithCleanup}
-        onDragMove={handleDragMove}
-        onDragStart={handleDragStart}
-        onDragCancel={handleDragCancel}
+        onReorder={handleReorder}
+        onDragStartIntent={() => {
+          if (contextMenu.visible) closeContextMenu()
+        }}
         onContextMenu={handleContextMenu}
         onLongPressMenu={handleLongPressMenu}
         onAddShortcut={(groupId) => {

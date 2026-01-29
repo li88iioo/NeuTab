@@ -47,6 +47,8 @@
   display: block;
   object-fit: contain;
   transition: all 0.2s ease;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 /*

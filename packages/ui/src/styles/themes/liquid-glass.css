@@ -127,6 +127,22 @@ body.liquid-glass.performance-mode:not(.dark) {
   --glow-pink: rgba(255, 45, 85, 0.08);
 }
 
+/* Mobile tuning: keep per-element glass, but reduce blur radius to stabilize FPS on touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  body.liquid-glass:not(.performance-mode) {
+    --glass-blur: 14px;
+    --glass-blur-heavy: 26px;
+    --glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+    --glass-shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.36);
+    --glass-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --glass-shadow-sm-hover: 0 6px 18px rgba(0, 0, 0, 0.24);
+    --accent-glow: rgba(var(--accent-rgb), 0.28);
+    --glow-cyan: rgba(var(--accent-rgb), 0.22);
+    --glow-purple: rgba(167, 139, 250, 0.22);
+    --glow-pink: rgba(244, 114, 182, 0.22);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.liquid-glass {
     transition: none;
@@ -264,7 +280,8 @@ body.liquid-glass::after {
   }
 }
 
-body.liquid-glass.dragging-app-card::after {
+body.liquid-glass.dragging-app-card::after,
+body.liquid-glass.perf-interacting::after {
   animation: none;
   opacity: 0.35;
 }
@@ -282,6 +299,34 @@ body.liquid-glass .soft-out {
   box-shadow: var(--glass-shadow), var(--glass-inset-shadow);
   /* 移除 all transition，防止尺寸变化时的动画 (与主主题保持一致) */
   transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+/* LOD: disable expensive glass effects during interaction. */
+body.liquid-glass.perf-interacting .soft-out,
+body.liquid-glass.perf-interacting .soft-in,
+body.liquid-glass.perf-interacting .app-card,
+body.liquid-glass.perf-interacting .ql-context-menu,
+body.liquid-glass.perf-interacting .search-suggestions,
+body.liquid-glass.perf-interacting .settings-panel,
+body.liquid-glass.perf-interacting .ql-modal-content,
+body.liquid-glass.perf-interacting .search-modal-content {
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.liquid-glass.perf-interacting .soft-out,
+body.liquid-glass.perf-interacting .app-card {
+  /* Avoid drastic luminance jumps during scroll: keep a translucent surface, just without blur. */
+  background: var(--glass-bg-hover) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+body.liquid-glass.perf-interacting .soft-out:hover,
+body.liquid-glass.perf-interacting .app-card:hover {
+  transform: none !important;
+  background: var(--glass-bg-hover) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
 /* Keep buttons/cards lively, but avoid hover "lift" on dropdowns and panels (prevents jitter + keeps glass anchored). */

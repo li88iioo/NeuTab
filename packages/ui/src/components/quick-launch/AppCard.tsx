@@ -1,6 +1,4 @@
 import { useEffect, useRef } from "react"
-import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import SmartIcon from "./SmartIcon"
 import type { QuickLaunchApp } from "@neutab/shared/types/quickLaunch"
 import { isAllowedNavigationUrl, isHttpUrl } from "@neutab/shared/utils/validation"
@@ -22,36 +20,21 @@ interface AppCardProps {
   localIconOverride?: string
 }
 
-const LONG_PRESS_DELAY = 450
-const LONG_PRESS_MOVE_THRESHOLD = 6
+// Touch: delay long-press menu so reorder drag can start first (handled by group-level native DnD).
+const LONG_PRESS_DELAY = 650
+// Keep this close to the native touch-drag threshold: too small cancels the menu too easily,
+// too large makes drag feel unresponsive on touch devices.
+const LONG_PRESS_MOVE_THRESHOLD = 8
 
 /**
  * AppCard 组件
  * @description 快捷启动栏中的单个应用卡片，支持拖拽排序、自定义图标渲染、多方式跳转以及右键菜单。
  */
 const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: AppCardProps) => {
-  /** 
-   * DND Kit 拖拽钩子
-   * @see https://docs.dndkit.com/presets/sortable/usesortable
-   */
   const longPressTimerRef = useRef<number | null>(null)
   const longPressTriggeredRef = useRef(false)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const lastPointerTypeRef = useRef<string | null>(null)
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: app.id,
-    animateLayoutChanges: (args) => {
-      if (args.wasDragging) return false
-      return defaultAnimateLayoutChanges(args)
-    }
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 5 : undefined,
-    opacity: isDragging ? 0 : undefined
-  }
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current !== null) {
@@ -145,6 +128,10 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: App
     clearLongPressTimer()
     longPressTimerRef.current = window.setTimeout(() => {
       longPressTimerRef.current = null
+      // If the page is already in drag mode, don't pop a context menu.
+      if (typeof document !== "undefined" && document.body.classList.contains("dragging-app-card")) {
+        return
+      }
       longPressTriggeredRef.current = true
       onLongPressMenu(e.clientX, e.clientY, e.currentTarget)
     }, LONG_PRESS_DELAY)
@@ -181,10 +168,8 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: App
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className="app-card soft-out"
-      data-dragging={isDragging ? "true" : undefined}
+      data-app-id={app.id}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -200,8 +185,6 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: App
       {/* 拖拽监听器只应用于内容区域 */}
       <div
         className="app-card-content"
-        {...attributes}
-        {...listeners}
         onClick={handleClick}
       >
         <SmartIcon

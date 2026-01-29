@@ -9,6 +9,14 @@
 
 ;(function () {
   try {
+    try {
+      var cachedTitle = localStorage.getItem("site_title_cache")
+      if (cachedTitle && cachedTitle.trim) {
+        var t = String(cachedTitle).trim()
+        if (t) document.title = t
+      }
+    } catch {}
+
     var mode = localStorage.getItem("theme_mode_cache") || "auto"
     var visual = localStorage.getItem("visual_theme_cache") || "neumorphic"
 
@@ -51,4 +59,3 @@
     console.warn("[theme-early-restore] Failed to restore background early", err)
   }
 })()
-

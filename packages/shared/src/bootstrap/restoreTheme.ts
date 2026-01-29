@@ -36,6 +36,14 @@ export const restoreTheme = () => {
     // 禁止初始动画（React 首次完成布局后会移除）
     document.body.classList.add("no-transition")
 
+    // 0. Restore page title early to avoid a "default title flash" before Storage loads.
+    try {
+      const cachedTitle = localStorage.getItem("site_title_cache")
+      if (cachedTitle && cachedTitle.trim()) document.title = cachedTitle.trim()
+    } catch {
+      // ignore
+    }
+
     // 1. 读取主题配置
     const cachedMode = localStorage.getItem("theme_mode_cache") as ThemeMode | null
     const cachedVisual = localStorage.getItem("visual_theme_cache") as VisualTheme | null
