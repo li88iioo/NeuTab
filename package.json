@@ -1,7 +1,7 @@
 {
   "name": "neu-tab",
   "displayName": "NeuTab",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple neumorphic browser homepage with search and quick launch",
   "author": "NeuTab Contributors",
   "scripts": {

@@ -58,6 +58,10 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   const [showSearchBar, setShowSearchBar] = useStorage("showSearchBar", DEFAULT_SETTINGS.showSearchBar)
   const [showTopSites, setShowTopSites] = useStorage("showTopSites", DEFAULT_SETTINGS.showTopSites)
   const [showRecentHistory, setShowRecentHistory] = useStorage("showRecentHistory", DEFAULT_SETTINGS.showRecentHistory)
+  const [autoSelectInternalUrl, setAutoSelectInternalUrl] = useStorage(
+    "autoSelectInternalUrl",
+    DEFAULT_SETTINGS.autoSelectInternalUrl
+  )
 
   // 布局与尺寸状态
   const [contentMaxWidth, setContentMaxWidth] = useStorage("contentMaxWidth", DEFAULT_SETTINGS.contentMaxWidth)
@@ -715,6 +719,31 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
                           type="checkbox"
                           checked={!!showRecentHistory}
                           onChange={() => setShowRecentHistory(!showRecentHistory)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* 网络环境岛屿 (自动选择内网地址) */}
+                <div className="settings-island">
+                  <div className="island-row-group">
+                    <label className="island-row compact">
+                      <div className="row-left">
+                        <div className="row-icon icon-site">
+                          <FiHome size={18} />
+                        </div>
+                        <div className="row-text">
+                          <span className="row-title">{t.autoSelectInternalUrl}</span>
+                          <span className="row-desc">{t.autoSelectInternalUrlDesc}</span>
+                        </div>
+                      </div>
+                      <div className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={!!autoSelectInternalUrl}
+                          onChange={() => setAutoSelectInternalUrl(!autoSelectInternalUrl)}
                         />
                         <span className="toggle-slider"></span>
                       </div>

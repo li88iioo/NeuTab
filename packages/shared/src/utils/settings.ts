@@ -48,7 +48,12 @@ export const DEFAULT_SETTINGS = {
   /** 快捷方式图标的圆角百分比 (0-50) */
   iconBorderRadius: 20,
   /** 快捷方式卡片的尺寸 70-130 像素(px) */
-  cardSize: 110
+  cardSize: 110,
+
+  /** 自动根据网络环境选择内网地址（若配置了 internalUrl） */
+  autoSelectInternalUrl: false,
+  /** 内网连通性探测超时（ms），超时则回退到默认 URL */
+  internalUrlProbeTimeoutMs: 350
 }
 
 /**

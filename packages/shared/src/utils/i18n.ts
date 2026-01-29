@@ -53,6 +53,8 @@ interface Translations {
   topSitesDesc: string
   recentHistory: string
   recentHistoryDesc: string
+  autoSelectInternalUrl: string
+  autoSelectInternalUrlDesc: string
   language: string
   languageDesc: string
   iconBorderRadius: string
@@ -233,6 +235,8 @@ const zh: Translations = {
   topSitesDesc: "显示最常访问的网站",
   recentHistory: "最近访问",
   recentHistoryDesc: "显示最近浏览的历史",
+  autoSelectInternalUrl: "自动选择内网地址",
+  autoSelectInternalUrlDesc: "当配置了内网地址时，优先探测可用性；超时则回退到默认地址",
   language: "语言",
   languageDesc: "选择界面语言",
   iconBorderRadius: "卡片圆角",
@@ -410,6 +414,8 @@ const en: Translations = {
   topSitesDesc: "Show most visited websites",
   recentHistory: "Recent History",
   recentHistoryDesc: "Show recently visited pages",
+  autoSelectInternalUrl: "Auto Select Internal URL",
+  autoSelectInternalUrlDesc: "If an internal URL is set, probe it first and fall back to the default URL on timeout",
   language: "Language",
   languageDesc: "Select interface language",
   iconBorderRadius: "Card Radius",

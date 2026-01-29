@@ -18,6 +18,12 @@ interface AppCardProps {
    * @description 优先于 app.localIcon，用于在 QuickLaunch 异步加载完图标缓存后实时更新显示。
    */
   localIconOverride?: string
+
+  /**
+   * Resolve the final navigation URL (e.g. auto-select internalUrl).
+   * Must be synchronous to preserve user-activation (avoid popup blocking / "no response" on click).
+   */
+  resolveUrl?: (app: QuickLaunchApp) => string
 }
 
 // Touch: delay long-press menu so reorder drag can start first (handled by group-level native DnD).
@@ -30,7 +36,7 @@ const LONG_PRESS_MOVE_THRESHOLD = 8
  * AppCard 组件
  * @description 快捷启动栏中的单个应用卡片，支持拖拽排序、自定义图标渲染、多方式跳转以及右键菜单。
  */
-const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: AppCardProps) => {
+const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride, resolveUrl }: AppCardProps) => {
   const longPressTimerRef = useRef<number | null>(null)
   const longPressTriggeredRef = useRef(false)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -66,7 +72,7 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: App
     // 阻止事件冒泡，防止与 dnd-kit 或其他监听器冲突
     e.stopPropagation()
 
-    const targetUrl = app.url || app.internalUrl
+    const targetUrl = resolveUrl ? resolveUrl(app) : (app.url || app.internalUrl)
     if (targetUrl) {
       if (!isAllowedNavigationUrl(targetUrl)) return
 
@@ -93,7 +99,7 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride }: App
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      const targetUrl = app.url || app.internalUrl
+      const targetUrl = resolveUrl ? resolveUrl(app) : (app.url || app.internalUrl)
       if (targetUrl) {
         if (!isAllowedNavigationUrl(targetUrl)) return
         window.location.href = targetUrl

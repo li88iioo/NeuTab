@@ -21,6 +21,7 @@ interface QuickLaunchGroupListProps {
     app: QuickLaunchApp,
     groupId: string
   ) => void
+  resolveUrl?: (app: QuickLaunchApp) => string
   onAddShortcut: (groupId: string) => void
   iconCache: Record<string, string>
   labels: {
@@ -110,6 +111,7 @@ const QuickLaunchGroupList = ({
   onDragStartIntent,
   onContextMenu,
   onLongPressMenu,
+  resolveUrl,
   onAddShortcut,
   iconCache,
   labels,
@@ -554,6 +556,7 @@ const QuickLaunchGroupList = ({
                       onLongPressMenu(x, y, anchor, app, group.id)
                     }}
                     localIconOverride={iconCache[app.id]}
+                    resolveUrl={resolveUrl}
                   />
                 ))}
 

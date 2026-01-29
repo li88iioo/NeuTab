@@ -14,7 +14,8 @@ import type { QuickLaunchApp, QuickLaunchGroup, IconStyle } from "@neutab/shared
 import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
 import { DEFAULT_SETTINGS } from "@neutab/shared/utils/settings"
 import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
-import { isAllowedNavigationUrl, sanitizeInternalUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
+import { ensureInternalUrlProbed, peekResolvedInternalUrl } from "@neutab/shared/utils/autoUrlSelect"
+import { isAllowedNavigationUrl, isHttpUrl, sanitizeInternalUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
 import { logger } from "@neutab/shared/utils/logger"
 import "./QuickLaunch.css"
 
@@ -87,6 +88,13 @@ export default function QuickLaunch({
   // 设置项：是否显示动态分组
   const [showTopSites] = useStorage("showTopSites", DEFAULT_SETTINGS.showTopSites)
   const [showRecentHistory] = useStorage("showRecentHistory", DEFAULT_SETTINGS.showRecentHistory)
+
+  // 设置项：自动根据网络环境选择内网地址（若配置了 internalUrl）
+  const [autoSelectInternalUrl] = useStorage("autoSelectInternalUrl", DEFAULT_SETTINGS.autoSelectInternalUrl)
+  const [internalUrlProbeTimeoutMs] = useStorage(
+    "internalUrlProbeTimeoutMs",
+    DEFAULT_SETTINGS.internalUrlProbeTimeoutMs
+  )
 
   /** 卡片大小:优先从缓存读取以保证首屏无跳变 */
   const [cardSize, , { isLoading: loadingCardSize }] = useStorage<number>(
@@ -188,6 +196,91 @@ export default function QuickLaunch({
     openContextMenuAt(x, y, anchor, app, groupId)
   }
 
+  const resolveUrl = useMemo(() => {
+    return (app: QuickLaunchApp) => {
+      const url = peekResolvedInternalUrl({
+        enabled: !!autoSelectInternalUrl,
+        internalUrl: app.internalUrl,
+        defaultUrl: app.url
+      })
+
+      // Never block user interaction: probe in background when there's no cached verdict yet.
+      if (
+        autoSelectInternalUrl &&
+        app.url &&
+        app.internalUrl &&
+        isHttpUrl(app.internalUrl) &&
+        url === (app.url || "")
+      ) {
+        void ensureInternalUrlProbed({
+          internalUrl: app.internalUrl,
+          timeoutMs: internalUrlProbeTimeoutMs
+        })
+      }
+
+      return url
+    }
+  }, [autoSelectInternalUrl, internalUrlProbeTimeoutMs])
+
+  // Warm up the in-memory reachability cache in idle time so the first click doesn't "wait for probe".
+  useEffect(() => {
+    if (!autoSelectInternalUrl) return
+    if (!displayGroups.length) return
+
+    const urls = new Set<string>()
+    for (const g of displayGroups) {
+      for (const a of g.apps) {
+        if (!a.url || !a.internalUrl) continue
+        if (!isHttpUrl(a.internalUrl)) continue
+        urls.add(a.internalUrl)
+      }
+    }
+    if (urls.size === 0) return
+
+    let cancelled = false
+    const w = window as any
+
+    const kickoff = () => {
+      void (async () => {
+        for (const u of urls) {
+          if (cancelled) return
+          await ensureInternalUrlProbed({ internalUrl: u, timeoutMs: internalUrlProbeTimeoutMs })
+        }
+      })()
+    }
+
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(kickoff, { timeout: 2000 })
+      return () => {
+        cancelled = true
+        if (typeof w.cancelIdleCallback === "function") w.cancelIdleCallback(id)
+      }
+    }
+
+    const id = window.setTimeout(kickoff, 250)
+    return () => {
+      cancelled = true
+      window.clearTimeout(id)
+    }
+  }, [autoSelectInternalUrl, displayGroups, internalUrlProbeTimeoutMs])
+
+  const openTargetUrl = (targetUrl: string, openInNewTab: boolean) => {
+    if (!targetUrl) return
+    if (!isAllowedNavigationUrl(targetUrl)) return
+
+    // For chrome:// (etc.), window.open often fails. Use location as a fallback.
+    if (!isHttpUrl(targetUrl)) {
+      window.location.href = targetUrl
+      return
+    }
+
+    if (openInNewTab) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer")
+    } else {
+      window.location.assign(targetUrl)
+    }
+  }
+
   /**
    * 执行右键菜单操作
    * @param action - 操作类型：打开、编辑、删除等
@@ -203,19 +296,12 @@ export default function QuickLaunch({
       case "open":
         // Close first to avoid position "jump" caused by focus/viewport changes on some mobile browsers.
         closeMenu()
-        setTimeout(() => {
-          const url = app.url || app.internalUrl
-          if (!url || !isAllowedNavigationUrl(url)) return
-          window.open(url, "_blank", "noopener,noreferrer")
-        }, 0)
+        openTargetUrl(resolveUrl(app), true)
         return
       case "openInternal":
         if (app.internalUrl) {
           closeMenu()
-          setTimeout(() => {
-            if (!isAllowedNavigationUrl(app.internalUrl!)) return
-            window.open(app.internalUrl!, "_blank", "noopener,noreferrer")
-          }, 0)
+          openTargetUrl(app.internalUrl!, true)
           return
         }
         closeMenu()
@@ -399,6 +485,7 @@ export default function QuickLaunch({
         }}
         onContextMenu={handleContextMenu}
         onLongPressMenu={handleLongPressMenu}
+        resolveUrl={resolveUrl}
         onAddShortcut={(groupId) => {
           setActiveGroupId(groupId)
           setFormData({ name: "", url: "", color: "#6c5ce7", internalUrl: "", groupId, iconStyle: "image", customText: "", localIcon: "", customIcon: "" })
