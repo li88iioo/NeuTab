@@ -315,7 +315,3 @@ If you encounter any issues or have feature suggestions, please feel free to sub
 [MIT License](LICENSE)
 
 ---
-
-<p align="center">
-  Built with ❤️ for photography lovers.
-</p>
