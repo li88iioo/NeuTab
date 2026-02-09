@@ -15,6 +15,7 @@ import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
 import { DEFAULT_SETTINGS } from "@neutab/shared/utils/settings"
 import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import { ensureInternalUrlProbed, peekResolvedInternalUrl } from "@neutab/shared/utils/autoUrlSelect"
+import { navigateCurrentTab } from "@neutab/shared/utils/navigation"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeInternalUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
 import { logger } from "@neutab/shared/utils/logger"
 import "./QuickLaunch.css"
@@ -270,14 +271,14 @@ export default function QuickLaunch({
 
     // For chrome:// (etc.), window.open often fails. Use location as a fallback.
     if (!isHttpUrl(targetUrl)) {
-      window.location.href = targetUrl
+      navigateCurrentTab(targetUrl)
       return
     }
 
     if (openInNewTab) {
       window.open(targetUrl, "_blank", "noopener,noreferrer")
     } else {
-      window.location.assign(targetUrl)
+      navigateCurrentTab(targetUrl)
     }
   }
 

@@ -24,6 +24,7 @@ import { logger } from "@neutab/shared/utils/logger"
 import { pulsePerfInteracting } from "@neutab/shared/utils/perfLod"
 import { ensureChromePermission } from "@neutab/shared/utils/permissions"
 import type { QuickLaunchGroup, QuickLaunchApp } from "@neutab/shared/types/quickLaunch"
+import { navigateCurrentTab } from "@neutab/shared/utils/navigation"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
 import "./SearchBar.css"
 
@@ -401,6 +402,16 @@ const SearchBarInner = () => {
   const safeEngines = engines?.length > 0 ? engines : DEFAULT_ENGINES
   const currentEngine = safeEngines.find((e) => e.id === currentEngineId) || safeEngines[0]
   const isLoading = isEnginesLoading || isEngineLoading
+  const hasResolvedInitialLoadingRef = useRef(false)
+
+  useEffect(() => {
+    if (!isLoading) {
+      hasResolvedInitialLoadingRef.current = true
+    }
+  }, [isLoading])
+
+  // 仅在“首屏尚未就绪”时显示占位条，避免运行中偶发 storage loading 造成白条闪烁。
+  const showInitialPlaceholder = isLoading && !hasResolvedInitialLoadingRef.current
 
   /** 执行搜索跳转 */
   const handleSearch = (e: React.FormEvent) => {
@@ -416,7 +427,7 @@ const SearchBarInner = () => {
       if (openInNewWindowEnabled) {
         window.open(href, "_blank", "noopener,noreferrer")
       } else {
-        window.location.assign(href)
+        navigateCurrentTab(href)
       }
     } catch (e) {
       if (e instanceof Error && e.message.includes("Only HTTP/HTTPS")) {
@@ -430,7 +441,7 @@ const SearchBarInner = () => {
   const openSuggestion = (url: string) => {
     if (!url) return
     if (!isAllowedNavigationUrl(url)) return
-    window.location.href = url
+    navigateCurrentTab(url)
   }
 
   const suggestions = useMemo(() => {
@@ -559,7 +570,7 @@ const SearchBarInner = () => {
 
   /** 渲染引擎图标 */
   // 加载中时渲染占位符而不是 null，避免布局塌陷
-  if (isLoading) {
+  if (showInitialPlaceholder) {
     return (
       <div className="search-container">
         <div className="search-form soft-in search-form--placeholder" />

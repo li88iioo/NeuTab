@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import SmartIcon from "./SmartIcon"
 import type { QuickLaunchApp } from "@neutab/shared/types/quickLaunch"
 import { isAllowedNavigationUrl, isHttpUrl } from "@neutab/shared/utils/validation"
+import { navigateCurrentTab } from "@neutab/shared/utils/navigation"
 
 /**
  * AppCard 组件属性
@@ -79,14 +80,13 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride, resol
       // 使用 window.open 在新标签页打开，避免页面刷新
       // 对于 chrome:// 等内部链接，使用 location.href
       if (!isHttpUrl(targetUrl)) {
-        window.location.href = targetUrl
+        navigateCurrentTab(targetUrl)
       } else {
         // Ctrl/Cmd + 点击在新标签页打开，普通点击在当前页打开
         if (e.ctrlKey || e.metaKey) {
           window.open(targetUrl, "_blank", "noopener,noreferrer")
         } else {
-          // 使用 assign 更加显式和可靠
-          window.location.assign(targetUrl)
+          navigateCurrentTab(targetUrl)
         }
       }
     }
@@ -102,7 +102,7 @@ const AppCard = ({ app, onContextMenu, onLongPressMenu, localIconOverride, resol
       const targetUrl = resolveUrl ? resolveUrl(app) : (app.url || app.internalUrl)
       if (targetUrl) {
         if (!isAllowedNavigationUrl(targetUrl)) return
-        window.location.href = targetUrl
+        navigateCurrentTab(targetUrl)
       }
     }
   }
