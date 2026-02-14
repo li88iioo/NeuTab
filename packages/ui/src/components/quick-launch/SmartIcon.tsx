@@ -7,6 +7,9 @@ import LetterAvatar from "./LetterAvatar"
 import type { IconStyle } from "@neutab/shared/types/quickLaunch"
 import "./SmartIcon.css"
 
+const MAX_FAVICON_RETRIES = 6
+const FAVICON_RETRY_BASE_MS = 1500
+
 /**
  * SmartIcon 组件属性
  */
@@ -45,6 +48,7 @@ interface SmartIconProps {
 const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText, localIcon, hasLocalIcon }: SmartIconProps) => {
   // 图片加载失败的“逐级回退”索引，避免一个失败就直接走到字母头像。
   const [srcIndex, setSrcIndex] = useState(0)
+  const [faviconRetryCount, setFaviconRetryCount] = useState(0)
 
   // 兼容旧数据：历史上存在 auto，统一视为 image
   const effectiveStyle: IconStyle = iconStyle === "text" ? "text" : "image"
@@ -67,21 +71,37 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
     return [localIcon, customIcon, builtInIconUrl, faviconUrl].filter(Boolean) as string[]
   }, [localIcon, customIcon, builtInIconUrl, faviconUrl])
 
-  const shouldRetryFavicon =
-    effectiveStyle === "image" && !localIcon && !customIcon && !builtInIconUrl && !!baseFaviconUrl
+  const shouldUseFaviconAutoRetry =
+    effectiveStyle === "image" &&
+    !hasLocalIcon &&
+    !localIcon &&
+    !customIcon &&
+    !builtInIconUrl &&
+    !!baseFaviconUrl
 
   useEffect(() => {
-    if (!shouldRetryFavicon) return
-    const timer = window.setTimeout(() => {
-      setFaviconRevision((prev) => prev + 1)
-    }, 2000)
-    return () => window.clearTimeout(timer)
-  }, [shouldRetryFavicon, baseFaviconUrl, url])
+    setFaviconRevision(0)
+    setFaviconRetryCount(0)
+  }, [baseFaviconUrl, localIcon, customIcon, builtInIconUrl, effectiveStyle, hasLocalIcon])
 
   // 当输入变化（URL/图标来源变化）时，重置回退索引。
   useEffect(() => {
     setSrcIndex(0)
   }, [name, url, customIcon, localIcon, builtInIconUrl, faviconUrl, effectiveStyle])
+
+  useEffect(() => {
+    if (!shouldUseFaviconAutoRetry) return
+    if (srcIndex <= 0) return
+    if (faviconRetryCount >= MAX_FAVICON_RETRIES) return
+
+    const delay = Math.min(30_000, FAVICON_RETRY_BASE_MS * (2 ** faviconRetryCount))
+    const timer = window.setTimeout(() => {
+      setFaviconRevision((prev) => prev + 1)
+      setFaviconRetryCount((prev) => prev + 1)
+    }, delay)
+
+    return () => window.clearTimeout(timer)
+  }, [shouldUseFaviconAutoRetry, srcIndex, faviconRetryCount])
 
   // 模式 1: 文本模式 - 显示自定义文本或首字母
   if (effectiveStyle === "text") {

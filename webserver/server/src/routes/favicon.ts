@@ -10,7 +10,7 @@ const router: ExpressRouter = Router()
 const CACHE_DIR = path.join(DATA_DIR, 'favicon-cache')
 fs.mkdirSync(CACHE_DIR, { recursive: true })
 
-const inflight = new Map<string, Promise<{ contentType: string; body: Buffer }>>()
+const inflight = new Map<string, Promise<{ contentType: string; body: Buffer } | null>>()
 
 const DEFAULT_TTL_SECONDS = 30 * 24 * 60 * 60
 const TTL_SECONDS = (() => {
@@ -20,12 +20,40 @@ const TTL_SECONDS = (() => {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_TTL_SECONDS
 })()
 
+const DEFAULT_NEGATIVE_TTL_SECONDS = 60 * 60
+const NEGATIVE_TTL_SECONDS = (() => {
+  const raw = process.env.FAVICON_NEGATIVE_CACHE_TTL_SECONDS
+  if (!raw) return DEFAULT_NEGATIVE_TTL_SECONDS
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_NEGATIVE_TTL_SECONDS
+})()
+
 const UPSTREAM_TIMEOUT_MS = (() => {
   const raw = process.env.FAVICON_UPSTREAM_TIMEOUT_MS
   if (!raw) return 8000
   const n = Number(raw)
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 8000
 })()
+
+type CacheMeta = {
+  contentType?: string
+  fetchedAt?: number
+  notFound?: boolean
+}
+
+type CachedEntry =
+  | { contentType: string; body: Buffer; isFresh: boolean; notFound: false }
+  | { isFresh: boolean; notFound: true }
+
+class UpstreamHttpError extends Error {
+  status: number
+
+  constructor(status: number) {
+    super(`Upstream error: ${status}`)
+    this.name = 'UpstreamHttpError'
+    this.status = status
+  }
+}
 
 async function cleanupCacheOnce(): Promise<void> {
   try {
@@ -40,13 +68,20 @@ async function cleanupCacheOnce(): Promise<void> {
 
       try {
         const metaRaw = await fsp.readFile(metaPath, 'utf-8')
-        const meta = JSON.parse(metaRaw) as { fetchedAt?: number }
+        const meta = JSON.parse(metaRaw) as CacheMeta
         const fetchedAt = typeof meta.fetchedAt === 'number' ? meta.fetchedAt : 0
-        const expired = fetchedAt > 0 && now - fetchedAt > TTL_SECONDS * 1000
+        const ttlSeconds = meta.notFound ? NEGATIVE_TTL_SECONDS : TTL_SECONDS
+        const expired = fetchedAt > 0 && now - fetchedAt > ttlSeconds * 1000
         if (expired) {
           await Promise.allSettled([fsp.unlink(metaPath), fsp.unlink(bodyPath)])
           continue
         }
+
+        // Negative cache entry doesn't need body file.
+        if (meta.notFound) {
+          continue
+        }
+
         // If body is missing, remove meta too.
         try {
           await fsp.access(bodyPath)
@@ -90,20 +125,24 @@ const cacheKey = (domain: string, size: number): string => {
   return crypto.createHash('sha256').update(`${domain}|${size}`).digest('hex')
 }
 
-async function readCache(key: string): Promise<{ contentType: string; body: Buffer; isFresh: boolean } | null> {
+async function readCache(key: string): Promise<CachedEntry | null> {
   const metaPath = path.join(CACHE_DIR, `${key}.json`)
   const bodyPath = path.join(CACHE_DIR, `${key}.bin`)
 
   try {
-    const [metaRaw, body] = await Promise.all([
-      fsp.readFile(metaPath, 'utf-8'),
-      fsp.readFile(bodyPath)
-    ])
-    const meta = JSON.parse(metaRaw) as { contentType?: string; fetchedAt?: number }
+    const metaRaw = await fsp.readFile(metaPath, 'utf-8')
+    const meta = JSON.parse(metaRaw) as CacheMeta
     const fetchedAt = typeof meta.fetchedAt === 'number' ? meta.fetchedAt : 0
-    const isFresh = fetchedAt > 0 && Date.now() - fetchedAt < TTL_SECONDS * 1000
+    const ttlSeconds = meta.notFound ? NEGATIVE_TTL_SECONDS : TTL_SECONDS
+    const isFresh = fetchedAt > 0 && Date.now() - fetchedAt < ttlSeconds * 1000
+
+    if (meta.notFound) {
+      return { isFresh, notFound: true }
+    }
+
+    const body = await fsp.readFile(bodyPath)
     const contentType = typeof meta.contentType === 'string' ? meta.contentType : 'image/png'
-    return { contentType, body, isFresh }
+    return { contentType, body, isFresh, notFound: false }
   } catch {
     return null
   }
@@ -126,29 +165,79 @@ async function writeCache(key: string, contentType: string, body: Buffer): Promi
   ])
 }
 
-async function fetchFromGoogle(domain: string, size: number): Promise<{ contentType: string; body: Buffer }> {
-  const url = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`
+async function writeNegativeCache(key: string): Promise<void> {
+  const metaPath = path.join(CACHE_DIR, `${key}.json`)
+  const bodyPath = path.join(CACHE_DIR, `${key}.bin`)
+  const tmpMeta = path.join(CACHE_DIR, `${key}.json.tmp`)
+
+  await fsp.writeFile(tmpMeta, JSON.stringify({ fetchedAt: Date.now(), notFound: true }))
+  await Promise.allSettled([fsp.unlink(bodyPath)])
+  await fsp.rename(tmpMeta, metaPath)
+}
+
+const normalizeIconContentType = (contentTypeHeader: string | null, urlHint: string): string | null => {
+  const raw = String(contentTypeHeader || '').split(';')[0].trim().toLowerCase()
+  if (!raw) {
+    if (urlHint.endsWith('.ico')) return 'image/x-icon'
+    return null
+  }
+  if (raw.startsWith('image/')) return raw
+  if (raw === 'application/octet-stream' && urlHint.endsWith('.ico')) return 'image/x-icon'
+  if (raw.includes('icon')) return 'image/x-icon'
+  return null
+}
+
+async function fetchIconFromUrl(url: string): Promise<{ contentType: string; body: Buffer }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
 
-  const res = await fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer))
+  const res = await fetch(url, {
+    signal: controller.signal,
+    redirect: 'follow',
+    headers: {
+      'User-Agent': 'NeuTabFaviconProxy/1.0'
+    }
+  }).finally(() => clearTimeout(timer))
+
   if (!res.ok) {
-    throw new Error(`Upstream error: ${res.status}`)
+    throw new UpstreamHttpError(res.status)
   }
 
-  const contentType = res.headers.get('content-type') || 'image/png'
-  if (!contentType.startsWith('image/')) {
-    throw new Error(`Unexpected content-type: ${contentType}`)
+  const contentType = normalizeIconContentType(res.headers.get('content-type'), url)
+  if (!contentType) {
+    throw new Error(`Unexpected content-type: ${res.headers.get('content-type') || '(missing)'}`)
   }
 
   const ab = await res.arrayBuffer()
   const body = Buffer.from(ab)
-  // Defensive: favicon should be tiny; avoid unbounded disk writes.
   if (body.length > 256 * 1024) {
     throw new Error('Favicon too large')
   }
 
   return { contentType, body }
+}
+
+async function fetchFromGoogle(domain: string, size: number): Promise<{ contentType: string; body: Buffer }> {
+  const url = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`
+  return fetchIconFromUrl(url)
+}
+
+async function fetchFromSiteOrigin(domain: string): Promise<{ contentType: string; body: Buffer }> {
+  const candidates = [`https://${domain}/favicon.ico`]
+  if (!domain.startsWith('www.')) {
+    candidates.push(`https://www.${domain}/favicon.ico`)
+  }
+
+  let lastError: unknown = null
+  for (const candidate of candidates) {
+    try {
+      return await fetchIconFromUrl(candidate)
+    } catch (e) {
+      lastError = e
+    }
+  }
+
+  throw lastError || new Error('Origin favicon fetch failed')
 }
 
 router.get('/', async (req: Request, res: Response) => {
@@ -163,6 +252,11 @@ router.get('/', async (req: Request, res: Response) => {
 
   const cached = await readCache(key)
   if (cached?.isFresh) {
+    if (cached.notFound) {
+      res.setHeader('Cache-Control', 'public, max-age=600')
+      res.setHeader('X-Cache', 'negative')
+      return res.status(204).end()
+    }
     res.setHeader('Content-Type', cached.contentType)
     res.setHeader('Cache-Control', 'public, max-age=86400')
     return res.send(cached.body)
@@ -172,26 +266,59 @@ router.get('/', async (req: Request, res: Response) => {
   let p = inflight.get(key)
   if (!p) {
     p = (async () => {
-      const fresh = await fetchFromGoogle(domain, size)
-      await writeCache(key, fresh.contentType, fresh.body)
-      return fresh
+      let googleError: unknown = null
+      try {
+        const fresh = await fetchFromGoogle(domain, size)
+        await writeCache(key, fresh.contentType, fresh.body)
+        return fresh
+      } catch (e) {
+        googleError = e
+      }
+
+      try {
+        const fallback = await fetchFromSiteOrigin(domain)
+        await writeCache(key, fallback.contentType, fallback.body)
+        return fallback
+      } catch (originError) {
+        const google404 = googleError instanceof UpstreamHttpError && googleError.status === 404
+        const origin404 = originError instanceof UpstreamHttpError && originError.status === 404
+        if (google404 && origin404) {
+          await writeNegativeCache(key)
+          return null
+        }
+        throw googleError ?? originError
+      }
     })()
     inflight.set(key, p)
   }
 
   try {
     const fresh = await p
+    if (!fresh) {
+      res.setHeader('Cache-Control', 'public, max-age=600')
+      return res.status(204).end()
+    }
     res.setHeader('Content-Type', fresh.contentType)
     res.setHeader('Cache-Control', 'public, max-age=86400')
     return res.send(fresh.body)
   } catch (e) {
     // If upstream fails, serve stale cache if present.
     if (cached) {
+      if (cached.notFound) {
+        res.setHeader('Cache-Control', 'public, max-age=300')
+        res.setHeader('X-Cache', 'stale-negative')
+        return res.status(204).end()
+      }
       res.setHeader('Content-Type', cached.contentType)
       res.setHeader('Cache-Control', 'public, max-age=3600')
       res.setHeader('X-Cache', 'stale')
       return res.send(cached.body)
     }
+
+    if (e instanceof UpstreamHttpError && e.status === 404) {
+      return res.status(204).end()
+    }
+
     if ((e as any)?.name === 'AbortError') {
       return res.status(504).json({ error: 'Favicon upstream timeout' })
     }

@@ -83,6 +83,7 @@ pnpm -w rebuild better-sqlite3
 | `CORS_ORIGIN` | 否 | `*` | CORS 白名单，逗号分隔² |
 | `TRUST_PROXY` | 否 | `false` | 反向代理模式，设为 `1` 启用 |
 | `FAVICON_CACHE_TTL_SECONDS` | 否 | `2592000` | Favicon 缓存时间（秒） |
+| `FAVICON_NEGATIVE_CACHE_TTL_SECONDS` | 否 | `3600` | Favicon 负缓存时间（上游 404，秒） |
 | `FAVICON_UPSTREAM_TIMEOUT_MS` | 否 | `8000` | Favicon 请求超时（毫秒） |
 | `MAX_ICON_BYTES` | 否 | `1048576` | 图标最大字节数 |
 | `MAX_SYNC_KEYS` | 否 | `200` | 同步 payload 最大 key 数 |
