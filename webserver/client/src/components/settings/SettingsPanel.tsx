@@ -448,11 +448,13 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
 
     // 收集所有自定义图标数据（从服务器 API 获取）
     const customIcons: Record<string, string> = {}
+    const token = localStorage.getItem('neutab_token')
+    const authHeader: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
     for (const group of safeGroups) {
       for (const app of group.apps) {
         if (app.hasLocalIcon) {
           try {
-            const res = await fetch(`/api/icons/${app.id}`)
+            const res = await fetch(`/api/icons/${app.id}`, { headers: authHeader })
             if (res.ok) {
               const blob = await res.blob()
               const base64 = await new Promise<string>((resolve) => {

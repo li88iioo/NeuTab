@@ -33,6 +33,7 @@ export const useQuickLaunchGroups = (_language: Language | undefined) => {
   // 包装 setGroups，同时写缓存和服务器
   const setGroups = useCallback((newGroups: QuickLaunchGroup[] | ((prev: QuickLaunchGroup[]) => QuickLaunchGroup[])) => {
     setGroupsState(prev => {
+      const previousGroups = prev
       const resolved = typeof newGroups === 'function' ? newGroups(prev) : newGroups
 
       selfUpdateRef.current = true
@@ -41,7 +42,7 @@ export const useQuickLaunchGroups = (_language: Language | undefined) => {
       queueMicrotask(() => {
         storage.set(GROUPS_KEY, resolved).catch(e => {
           logger.error("Failed to save groups to server:", e)
-          setGroupsState(prev)
+          setGroupsState(previousGroups)
         }).finally(() => {
           selfUpdateRef.current = false
         })
