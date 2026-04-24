@@ -3,6 +3,7 @@ name: Build and Push Docker
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: li88iioo/neutab
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   push:
