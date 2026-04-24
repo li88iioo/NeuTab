@@ -149,7 +149,7 @@ docker run -d -p 3001:3001 \
 
 ### 环境要求
 - Node.js 20+
-- pnpm 8+
+- pnpm 10.28.2（由 `packageManager` 锁定）
 
 ### 项目结构
 

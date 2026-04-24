@@ -18,6 +18,8 @@ const isOriginAllowed = (origin: string, allowList: string[]): boolean => {
   for (const rule of allowList) {
     if (!rule) continue
     if (rule === '*') return true
+    if (rule === 'chrome-extension://*' && origin.startsWith('chrome-extension://')) return true
+    if (rule === 'moz-extension://*' && origin.startsWith('moz-extension://')) return true
     if (origin === rule) return true
   }
   return false

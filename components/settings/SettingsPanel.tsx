@@ -101,17 +101,39 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     previousFocusRef.current = document.activeElement as HTMLElement
 
     const unlockScroll = lockBodyScroll()
+    const getFocusableElements = () => Array.from(
+      settingsPanelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      ) || []
+    ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null)
 
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose()
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const focusable = getFocusableElements()
+      if (focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
       }
     }
-    document.addEventListener('keydown', handleEscape)
+
+    requestAnimationFrame(() => getFocusableElements()[0]?.focus())
+    document.addEventListener('keydown', handleKeyDown)
 
     return () => {
       unlockScroll()
-      document.removeEventListener('keydown', handleEscape)
+      document.removeEventListener('keydown', handleKeyDown)
       if (previousFocusRef.current) {
         previousFocusRef.current.focus()
       }
@@ -218,6 +240,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const visualThemeSelectRef = useRef<HTMLDivElement | null>(null)
+  const settingsPanelRef = useRef<HTMLDivElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
   const [isVisualThemeOpen, setIsVisualThemeOpen] = useState(false)
@@ -556,7 +579,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   // 渲染 JSX
   return (
     <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-panel soft-out" role="dialog" aria-modal="true" aria-label={t.settings} onClick={(e) => e.stopPropagation()}>
+      <div ref={settingsPanelRef} className="settings-panel soft-out" role="dialog" aria-modal="true" aria-label={t.settings} onClick={(e) => e.stopPropagation()}>
         {/* 面板头部：包含分类导航与快捷工具栏 */}
         <div className="settings-header">
           <div className="settings-top-nav-wrap">

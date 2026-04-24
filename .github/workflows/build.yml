@@ -33,6 +33,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm build:packages
+
+      - name: Build web client
+        run: pnpm --filter neutab-web-client build
+
+      - name: Build web server
+        run: pnpm --filter neutab-web-server build
+
       - name: Package (Chrome)
         run: pnpm package
 

@@ -73,7 +73,9 @@ ENV CLIENT_DIST_DIR=/app/client/dist
 WORKDIR /app
 
 # Create non-root user for runtime
-RUN addgroup -S neutab && adduser -S neutab -G neutab
+RUN apk add --no-cache su-exec \
+  && addgroup -S neutab \
+  && adduser -S neutab -G neutab
 
 COPY --from=deps /deps/node_modules ./node_modules
 COPY --from=deps /deps/webserver/server/node_modules ./webserver/server/node_modules
@@ -84,14 +86,14 @@ COPY --from=builder /app/webserver/server/package.json ./webserver/server/packag
 
 # Copy client static files
 COPY --from=builder /app/webserver/client/dist ./client/dist
+COPY --chmod=755 webserver/docker-entrypoint.sh /usr/local/bin/neutab-entrypoint
 
 # Create data directories and set ownership
 RUN mkdir -p /app/data/icons && chown -R neutab:neutab /app/data
 
 EXPOSE 3001
 
-USER neutab
-
 WORKDIR /app/webserver/server
 
+ENTRYPOINT ["neutab-entrypoint"]
 CMD ["node", "dist/index.js"]

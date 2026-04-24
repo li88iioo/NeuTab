@@ -80,7 +80,7 @@ pnpm -w rebuild better-sqlite3
 | `JWT_SECRET` | **是**¹ | - | JWT 签名密钥 |
 | `PORT` | 否 | `3001` | 服务端口 |
 | `DATA_DIR` | 否 | `/app/data` | 数据目录（SQLite、图标、缓存） |
-| `CORS_ORIGIN` | 否 | `*` | CORS 白名单，逗号分隔² |
+| `CORS_ORIGIN` | 否 | 本机开发源 | CORS 白名单，逗号分隔² |
 | `TRUST_PROXY` | 否 | `false` | 反向代理模式，设为 `1` 启用 |
 | `FAVICON_CACHE_TTL_SECONDS` | 否 | `2592000` | Favicon 缓存时间（秒） |
 | `FAVICON_NEGATIVE_CACHE_TTL_SECONDS` | 否 | `3600` | Favicon 负缓存时间（上游 404，秒） |
@@ -90,7 +90,7 @@ pnpm -w rebuild better-sqlite3
 | `MAX_SYNC_VALUE_BYTES` | 否 | `2097152` | 同步单个 value 最大字节数 |
 
 ¹ 生产环境必填
-² 支持前缀通配：`chrome-extension://*`
+² 普通 Web origin 只支持精确匹配；自用未上架扩展可使用 `chrome-extension://*` 或 `moz-extension://*` 适配随机扩展 ID。
 
 ---
 
@@ -251,5 +251,5 @@ pnpm -w rebuild better-sqlite3
 使用预构建镜像：
 
 ```bash
-docker pull ghcr.io/li88iioo/neutab:latest
+docker pull ghcr.io/li88iioo/neutab:<version>
 ```
