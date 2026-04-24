@@ -884,6 +884,22 @@ body.liquid-glass .app-card:hover {
     0 0 80px var(--glow-purple) !important;
 }
 
+/* Mobile browsers often re-rasterize backdrop-filter in scroll tiles. With a 4-column
+   icon grid this can show up as position-specific icon flicker, so keep cards static. */
+@media (hover: none) and (pointer: coarse) {
+  body.liquid-glass .app-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-bg);
+  }
+
+  body.liquid-glass .app-card:hover,
+  body.liquid-glass .app-card:focus,
+  body.liquid-glass .app-card:focus-within {
+    background: var(--glass-bg) !important;
+  }
+}
+
 /* 键盘焦点样式 - 明确的外圈 (Outer Ring) */
 body.liquid-glass .app-card:focus,
 body.liquid-glass .app-card:focus-within {
