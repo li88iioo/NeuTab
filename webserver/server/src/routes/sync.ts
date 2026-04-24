@@ -6,7 +6,7 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express'
 import crypto from 'crypto'
 import fs from 'fs'
-import { db, iconCountByFilename, kvGetAll, kvSetMany, iconGet, iconGetAll, iconSet, getIconPath } from '../db.js'
+import { db, iconCountByFilename, kvGetAll, kvRemove, kvSet, iconGet, iconGetAll, iconSet, getIconPath } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router: ExpressRouter = Router()
@@ -42,6 +42,25 @@ const MAX_SYNC_VALUE_BYTES = (() => {
   const n = Number(raw)
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 2 * 1024 * 1024
 })()
+
+const MAGIC_BYTES: Record<string, Buffer> = {
+  'image/png': Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+  'image/jpeg': Buffer.from([0xff, 0xd8, 0xff]),
+  'image/webp': Buffer.from('RIFF', 'ascii'),
+  'image/gif': Buffer.from('GIF8', 'ascii')
+}
+
+function validateMagicBytes(buffer: Buffer, declaredMime: string): boolean {
+  const magic = MAGIC_BYTES[declaredMime]
+  if (!magic || buffer.length < magic.length) return false
+  for (let i = 0; i < magic.length; i += 1) {
+    if (buffer[i] !== magic[i]) return false
+  }
+  if (declaredMime === 'image/webp') {
+    return buffer.length >= 12 && buffer.slice(8, 12).toString('ascii') === 'WEBP'
+  }
+  return true
+}
 
 const SYNC_KEY_RE = /^[a-zA-Z][a-zA-Z0-9_]{0,63}$/
 
@@ -82,12 +101,15 @@ const writeBlobIfMissing = (targetPath: string, buffer: Buffer): boolean => {
   if (fs.existsSync(targetPath)) return false
   const tmpPath = writeTempFile(targetPath, buffer)
   try {
-    // Target name is content hash; even if two requests race, overwriting is safe (same bytes).
     fs.renameSync(tmpPath, targetPath)
-  } catch {
+    return true
+  } catch (e: unknown) {
     cleanupTempFile(tmpPath)
+    if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'EEXIST' && fs.existsSync(targetPath)) {
+      return false
+    }
+    throw e
   }
-  return true
 }
 
 // GET /pull - 从服务器拉取全量数据
@@ -204,7 +226,9 @@ router.post('/push', (req: Request, res: Response) => {
     const settingsToWrite: Record<string, unknown> = Object.create(null)
     for (const [key, value] of entries) {
       if (key === 'customIcons') continue
-      if (!isSyncKeyName(key)) continue
+      if (!isSyncKeyName(key)) {
+        return res.status(400).json({ error: `Invalid sync key: ${key}` })
+      }
       if (!shouldSyncValue(value)) {
         return res.status(413).json({ error: `Value too large or invalid for key: ${key}` })
       }
@@ -228,6 +252,9 @@ router.post('/push', (req: Request, res: Response) => {
         const buffer = Buffer.from(base64Data, 'base64')
         if (buffer.length > MAX_ICON_BYTES) {
           return res.status(413).json({ error: `Icon too large: ${appId}` })
+        }
+        if (!validateMagicBytes(buffer, mimeType)) {
+          return res.status(400).json({ error: `Icon content does not match declared type: ${appId}` })
         }
 
         const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
@@ -259,8 +286,14 @@ router.post('/push', (req: Request, res: Response) => {
 
       // Commit DB changes in a single transaction.
       const tx = db.transaction(() => {
-        if (Object.keys(settingsToWrite).length > 0) {
-          kvSetMany(settingsToWrite)
+        const incomingKeys = new Set(Object.keys(settingsToWrite))
+        for (const key of Object.keys(kvGetAll())) {
+          if (isSyncKeyName(key) && !incomingKeys.has(key)) {
+            kvRemove(key)
+          }
+        }
+        for (const [key, value] of Object.entries(settingsToWrite)) {
+          kvSet(key, value)
         }
         for (const op of iconOps) {
           iconSet(op.id, op.filename, op.mimeType, op.sizeBytes, op.hash)

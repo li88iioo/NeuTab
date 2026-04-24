@@ -507,13 +507,6 @@ body:not(.liquid-glass) .app-card.soft-out:hover:not(:active) {
 
 /* 移动端触摸设备专用样式 */
 @media (hover: none) and (pointer: coarse) {
-  /* Disable pinch-zoom gesture while keeping normal scrolling. */
-  html,
-  body {
-    touch-action: pan-x pan-y;
-  }
-
-
   /* 禁用所有元素的点击高亮 */
   * {
     -webkit-tap-highlight-color: transparent;
@@ -529,7 +522,6 @@ body:not(.liquid-glass) .app-card.soft-out:hover:not(:active) {
   .engine-icon,
   .search-form {
     -webkit-tap-highlight-color: transparent;
-    outline: none !important;
   }
 
   /* 禁用所有按钮和可点击元素的 focus 轮廓 */
@@ -543,7 +535,6 @@ body:not(.liquid-glass) .app-card.soft-out:hover:not(:active) {
   .search-btn:active,
   .engine-icon:focus,
   .engine-icon:active {
-    outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
   }
 

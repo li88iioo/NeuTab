@@ -288,6 +288,8 @@ function NewTabContent() {
       })
     }
 
+    // Keep the launcher viewport stable on touch devices; accidental pinch zoom
+    // makes dense quick-launch cards hard to hit and breaks the intended layout.
     const preventMultiTouchZoom = (e: TouchEvent) => {
       if (e.touches.length > 1) e.preventDefault()
     }

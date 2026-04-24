@@ -46,23 +46,45 @@ function isSafeIconId(id: string): boolean {
   return SAFE_ICON_ID_RE.test(id)
 }
 
+const MAGIC_BYTES: Record<string, Buffer> = {
+  'image/png': Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+  'image/jpeg': Buffer.from([0xff, 0xd8, 0xff]),
+  'image/webp': Buffer.from('RIFF', 'ascii'),
+  'image/gif': Buffer.from('GIF8', 'ascii')
+}
+
+function validateMagicBytes(buffer: Buffer, declaredMime: string): boolean {
+  const magic = MAGIC_BYTES[declaredMime]
+  if (!magic) return false
+  if (buffer.length < magic.length) return false
+  for (let i = 0; i < magic.length; i++) {
+    if (buffer[i] !== magic[i]) return false
+  }
+  if (declaredMime === 'image/webp') {
+    if (buffer.length < 12) return false
+    return buffer.slice(8, 12).toString('ascii') === 'WEBP'
+  }
+  return true
+}
+
 function writeBlobIfMissing(targetPath: string, buffer: Buffer): boolean {
   if (fs.existsSync(targetPath)) return false
   const rand = crypto.randomBytes(8).toString('hex')
   const tmpPath = `${targetPath}.tmp-${rand}`
   fs.writeFileSync(tmpPath, new Uint8Array(buffer))
   try {
-    // If another request already created the same hash blob, overwriting is fine
-    // because content is identical (same hash). Keep the logic simple.
     fs.renameSync(tmpPath, targetPath)
     return true
-  } catch {
+  } catch (e: unknown) {
     try {
       if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath)
     } catch {
-      // ignore
+      // ignore cleanup error
     }
-    return false
+    if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'EEXIST' && fs.existsSync(targetPath)) {
+      return false
+    }
+    throw e
   }
 }
 
@@ -97,6 +119,9 @@ router.post('/upload', authMiddleware, (req: Request, res: Response) => {
     const buffer = Buffer.from(base64Data, 'base64')
     if (buffer.length > MAX_ICON_BYTES) {
       return res.status(413).json({ error: 'Icon too large' })
+    }
+    if (!validateMagicBytes(buffer, mimeType)) {
+      return res.status(400).json({ error: 'Image content does not match declared type' })
     }
     const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
     const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
@@ -158,6 +183,9 @@ router.post('/uploadRaw/:id', authMiddleware, rawIconParser, (req: Request, res:
   if (buffer.length > MAX_ICON_BYTES) {
     return res.status(413).json({ error: 'Icon too large' })
   }
+  if (!validateMagicBytes(buffer, contentType)) {
+    return res.status(400).json({ error: 'Image content does not match declared type' })
+  }
 
   const mimeType = contentType
   const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
@@ -197,8 +225,7 @@ router.post('/uploadRaw/:id', authMiddleware, rawIconParser, (req: Request, res:
 })
 
 // GET /:id - 获取图标（无需鉴权）
-// 图标不存在时返回 204 而非 404，避免控制台错误（<img> 会触发 onError 回退）
-router.get('/blob/:filename', (req: Request, res: Response) => {
+router.get('/blob/:filename', authMiddleware, (req: Request, res: Response) => {
   const filename = String(req.params.filename ?? '').trim()
 
   // Only allow content-addressed blobs.
@@ -215,7 +242,7 @@ router.get('/blob/:filename', (req: Request, res: Response) => {
   return res.sendFile(filePath)
 })
 
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, (req: Request, res: Response) => {
   const { id } = req.params
 
   if (!isSafeIconId(id)) {
@@ -225,12 +252,13 @@ router.get('/:id', (req: Request, res: Response) => {
   const meta = iconGet(id)
 
   if (!meta) {
-    return res.status(204).end()
+    return res.status(404).json({ error: 'Icon not found' })
   }
 
   const filePath = getIconPath(meta.filename)
   if (!fs.existsSync(filePath)) {
-    return res.status(204).end()
+    iconRemove(id)
+    return res.status(404).json({ error: 'Icon file missing' })
   }
 
   // Indirect through the content-addressed blob so we can cache it forever,

@@ -441,7 +441,11 @@ const SearchBarInner = () => {
   const openSuggestion = (url: string) => {
     if (!url) return
     if (!isAllowedNavigationUrl(url)) return
-    navigateCurrentTab(url)
+    if (openInNewWindowEnabled) {
+      window.open(url, "_blank", "noopener,noreferrer")
+    } else {
+      navigateCurrentTab(url)
+    }
   }
 
   const suggestions = useMemo(() => {

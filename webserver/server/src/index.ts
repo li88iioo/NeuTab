@@ -18,11 +18,6 @@ const isOriginAllowed = (origin: string, allowList: string[]): boolean => {
   for (const rule of allowList) {
     if (!rule) continue
     if (rule === '*') return true
-    if (rule.endsWith('*')) {
-      const prefix = rule.slice(0, -1)
-      if (origin.startsWith(prefix)) return true
-      continue
-    }
     if (origin === rule) return true
   }
   return false
@@ -91,11 +86,12 @@ app.use((req, res, next) => {
     .map((s) => s.trim())
     .filter(Boolean)
 
-  if (allowList.length === 0) {
+  if (allowList.length === 0 && process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', '*')
   } else if (typeof origin === 'string' && isOriginAllowed(origin, allowList)) {
     res.header('Access-Control-Allow-Origin', origin)
     res.header('Vary', 'Origin')
+    res.header('Access-Control-Allow-Credentials', 'true')
   }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Auth-Code')

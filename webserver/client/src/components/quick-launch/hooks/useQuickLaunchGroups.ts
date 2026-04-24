@@ -37,22 +37,14 @@ export const useQuickLaunchGroups = (_language: Language | undefined) => {
 
       selfUpdateRef.current = true
 
-      // 写入 localStorage 缓存
-      localStorage.setItem(GROUPS_KEY, JSON.stringify(resolved))
-
-      // 延迟触发事件和写入服务器，避免渲染期间状态更新
+      // 延迟写入服务器，避免渲染期间状态更新；storage shim 负责缓存和事件。
       queueMicrotask(() => {
-        // 触发本地事件
-        window.dispatchEvent(new CustomEvent('neutab-storage-update', {
-          detail: { key: GROUPS_KEY, newValue: resolved }
-        }))
-
-        // 异步写入服务器
         storage.set(GROUPS_KEY, resolved).catch(e => {
           logger.error("Failed to save groups to server:", e)
+          setGroupsState(prev)
+        }).finally(() => {
+          selfUpdateRef.current = false
         })
-
-        selfUpdateRef.current = false
         logger.debug(`Saved ${resolved.length} groups`)
       })
 

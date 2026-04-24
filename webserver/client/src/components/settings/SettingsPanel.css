@@ -858,6 +858,7 @@ body.dark .language-select-option:hover {
 
 .backup-card {
   display: flex;
+  font: inherit;
   flex-direction: column;
   align-items: center;
   justify-content: center;

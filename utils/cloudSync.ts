@@ -256,7 +256,7 @@ export async function cloudPull(serverUrl: string, authCode: string, language: L
     await Promise.all(
       batch.map(async (iconId) => {
         try {
-          const iconRes = await fetch(`${baseUrl}/api/icons/${encodeURIComponent(iconId)}`)
+          const iconRes = await fetch(`${baseUrl}/api/icons/${encodeURIComponent(iconId)}`, { headers: { "X-Auth-Code": authCode } })
           if (!iconRes.ok) return
           const blob = await iconRes.blob()
           if (!blob.type.startsWith("image/")) return

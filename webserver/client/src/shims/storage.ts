@@ -265,6 +265,7 @@ export class Storage {
       } catch {
         // ignore
       }
+      throw e
     }
   }
 
@@ -341,6 +342,7 @@ export class Storage {
       } catch {
         // ignore
       }
+      throw e
     }
   }
 
@@ -389,6 +391,7 @@ export class Storage {
       } catch {
         // ignore
       }
+      throw e
     }
   }
 

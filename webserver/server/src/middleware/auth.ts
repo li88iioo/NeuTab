@@ -3,6 +3,7 @@
  * 支持 JWT Bearer token 和 X-Auth-Code header
  */
 import type { Request, Response, NextFunction } from 'express'
+import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
 const AUTH_CODE = process.env.AUTH_CODE
@@ -32,6 +33,38 @@ const JWT_SECRET: string = (() => {
   return 'neutab-default-secret-change-in-production'
 })()
 
+const timingSafeEqualString = (a: string, b: string): boolean => {
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ab.length !== bb.length) return false
+  return crypto.timingSafeEqual(ab, bb)
+}
+
+const readCookie = (req: Request, name: string): string | undefined => {
+  const raw = req.headers.cookie
+  if (!raw) return undefined
+  for (const part of raw.split(';')) {
+    const [k, ...rest] = part.trim().split('=')
+    if (k === name) return decodeURIComponent(rest.join('='))
+  }
+  return undefined
+}
+
+const verifyJwtToken = (token: string | undefined): boolean => {
+  if (!token) return false
+  try {
+    jwt.verify(token, JWT_SECRET)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const hasValidAuthCode = (req: Request): boolean => {
+  const authCode = req.headers['x-auth-code']
+  return Boolean(AUTH_CODE && typeof authCode === 'string' && timingSafeEqualString(authCode, AUTH_CODE))
+}
+
 /**
  * 验证请求是否已授权
  * 支持两种方式：
@@ -42,17 +75,17 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   // 方式1：JWT Bearer
   const authHeader = req.headers.authorization
   if (authHeader?.startsWith('Bearer ')) {
-    try {
-      jwt.verify(authHeader.slice(7), JWT_SECRET)
+    if (verifyJwtToken(authHeader.slice(7))) {
       return next()
-    } catch {
-      // JWT 无效，继续检查其他方式
     }
   }
 
+  if (verifyJwtToken(readCookie(req, 'neutab_token'))) {
+    return next()
+  }
+
   // 方式2：X-Auth-Code header
-  const authCode = req.headers['x-auth-code']
-  if (AUTH_CODE && authCode === AUTH_CODE) {
+  if (hasValidAuthCode(req)) {
     return next()
   }
 
@@ -64,17 +97,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
  */
 export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      jwt.verify(authHeader.slice(7), JWT_SECRET)
-      ;(req as any).authenticated = true
-    } catch {
-      ;(req as any).authenticated = false
-    }
-  } else {
-    const authCode = req.headers['x-auth-code']
-    ;(req as any).authenticated = Boolean(AUTH_CODE && authCode === AUTH_CODE)
-  }
+  const bearerOk = authHeader?.startsWith('Bearer ') ? verifyJwtToken(authHeader.slice(7)) : false
+  const cookieOk = verifyJwtToken(readCookie(req, 'neutab_token'))
+  ;(req as any).authenticated = bearerOk || cookieOk || hasValidAuthCode(req)
   next()
 }
 

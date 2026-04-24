@@ -601,7 +601,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   // 渲染 JSX
   return (
     <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-panel soft-out" onClick={(e) => e.stopPropagation()}>
+      <div className="settings-panel soft-out" role="dialog" aria-modal="true" aria-label={t.settings} onClick={(e) => e.stopPropagation()}>
         {/* 面板头部：包含分类导航与快捷工具栏 */}
         <div className="settings-header">
           <div className="settings-top-nav-wrap">
@@ -1097,7 +1097,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
 
                 {/* 导出/导入磁贴 */}
                 <div className="backup-grid">
-                  <div className="backup-card" onClick={handleExport}>
+                  <button type="button" className="backup-card" onClick={handleExport}>
                     <div className="backup-icon icon-export">
                       <FiDownload size={28} />
                     </div>
@@ -1105,7 +1105,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
                       <h4>{t.exportConfig}</h4>
                       <p>{t.exportConfigDesc}</p>
                     </div>
-                  </div>
+                  </button>
 
                   <label className="backup-card">
                     <div className="backup-icon icon-import">

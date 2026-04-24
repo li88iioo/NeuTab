@@ -115,11 +115,6 @@ const normalizeIpLiteral = (value: string): string => {
 
 const isIpLiteral = (value: string): boolean => isIP(normalizeIpLiteral(value)) !== 0
 
-const formatOriginHost = (value: string): string => {
-  const normalized = normalizeIpLiteral(value)
-  return isIP(normalized) === 6 ? `[${normalized}]` : normalized
-}
-
 const isPrivateOrReservedIp = (ip: string): boolean => {
   const normalized = normalizeIpLiteral(ip)
   const version = isIP(normalized)
@@ -157,27 +152,70 @@ const isPrivateOrReservedIp = (ip: string): boolean => {
   return false
 }
 
-const assertPublicFetchHost = async (hostname: string): Promise<void> => {
+const MAX_FAVICON_BYTES = 256 * 1024
+
+async function assertPublicFetchHost(hostname: string): Promise<string> {
   const normalized = normalizeIpLiteral(hostname)
   if (isIP(normalized)) {
     if (isPrivateOrReservedIp(normalized)) throw new Error('Blocked private favicon host')
-    return
+    return normalized
   }
 
   const records = await lookup(normalized, { all: true, verbatim: true })
   if (records.length === 0) throw new Error('Favicon host did not resolve')
+  const resolvedIp = records[0].address
   if (records.some((record) => isPrivateOrReservedIp(record.address))) {
     throw new Error('Blocked private favicon host')
   }
+  return resolvedIp
 }
 
-const assertPublicFetchUrl = async (rawUrl: string): Promise<URL> => {
-  const url = new URL(rawUrl)
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+async function fetchPublicUrl(url: string): Promise<globalThis.Response> {
+  const parsed = new URL(url)
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error('Unsupported favicon URL protocol')
   }
-  await assertPublicFetchHost(url.hostname)
-  return url
+  await assertPublicFetchHost(parsed.hostname)
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+
+  try {
+    const res = await fetch(parsed, {
+      signal: controller.signal,
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'NeuTabFaviconProxy/1.0'
+      }
+    }).finally(() => clearTimeout(timer))
+
+    return res
+  } catch (e) {
+    clearTimeout(timer)
+    throw e
+  }
+}
+
+async function streamReadWithLimit(res: globalThis.Response, maxBytes: number): Promise<Buffer> {
+  if (!res.body) throw new Error('Empty response body')
+  const cl = res.headers.get('content-length')
+  if (cl && Number(cl) > maxBytes) throw new Error('Favicon too large')
+
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+      total += value.length
+      if (total > maxBytes) throw new Error('Favicon too large')
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  return Buffer.concat(chunks)
 }
 
 const isValidDomain = (domain: string): boolean => {
@@ -234,8 +272,9 @@ async function readCache(key: string): Promise<CachedEntry | null> {
 async function writeCache(key: string, contentType: string, body: Buffer): Promise<void> {
   const metaPath = path.join(CACHE_DIR, `${key}.json`)
   const bodyPath = path.join(CACHE_DIR, `${key}.bin`)
-  const tmpMeta = path.join(CACHE_DIR, `${key}.json.tmp`)
-  const tmpBody = path.join(CACHE_DIR, `${key}.bin.tmp`)
+  const rand = crypto.randomBytes(6).toString('hex')
+  const tmpMeta = path.join(CACHE_DIR, `${key}.json.tmp-${rand}`)
+  const tmpBody = path.join(CACHE_DIR, `${key}.bin.tmp-${rand}`)
 
   await Promise.all([
     fsp.writeFile(tmpBody, body),
@@ -251,7 +290,8 @@ async function writeCache(key: string, contentType: string, body: Buffer): Promi
 async function writeNegativeCache(key: string): Promise<void> {
   const metaPath = path.join(CACHE_DIR, `${key}.json`)
   const bodyPath = path.join(CACHE_DIR, `${key}.bin`)
-  const tmpMeta = path.join(CACHE_DIR, `${key}.json.tmp`)
+  const rand = crypto.randomBytes(6).toString('hex')
+  const tmpMeta = path.join(CACHE_DIR, `${key}.json.tmp-${rand}`)
 
   await fsp.writeFile(tmpMeta, JSON.stringify({ fetchedAt: Date.now(), notFound: true }))
   await Promise.allSettled([fsp.unlink(bodyPath)])
@@ -275,23 +315,13 @@ async function fetchIconFromUrl(url: string): Promise<{ contentType: string; bod
   let res: globalThis.Response | null = null
 
   for (let redirectCount = 0; redirectCount <= 5; redirectCount += 1) {
-    const parsed = await assertPublicFetchUrl(currentUrl)
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
-
-    res = await fetch(parsed, {
-      signal: controller.signal,
-      redirect: 'manual',
-      headers: {
-        'User-Agent': 'NeuTabFaviconProxy/1.0'
-      }
-    }).finally(() => clearTimeout(timer))
+    res = await fetchPublicUrl(currentUrl)
 
     if (res.status < 300 || res.status >= 400) break
 
     const nextUrl = res.headers.get('location')
     if (!nextUrl) throw new Error('Redirect missing location')
-    currentUrl = new URL(nextUrl, parsed).toString()
+    currentUrl = new URL(nextUrl, currentUrl).toString()
   }
 
   if (!res) throw new Error('Favicon fetch failed')
@@ -306,11 +336,7 @@ async function fetchIconFromUrl(url: string): Promise<{ contentType: string; bod
     throw new Error(`Unexpected content-type: ${res.headers.get('content-type') || '(missing)'}`)
   }
 
-  const ab = await res.arrayBuffer()
-  const body = Buffer.from(ab)
-  if (body.length > 256 * 1024) {
-    throw new Error('Favicon too large')
-  }
+  const body = await streamReadWithLimit(res, MAX_FAVICON_BYTES)
 
   return { contentType, body }
 }
@@ -319,25 +345,6 @@ async function fetchFromGoogle(domain: string, size: number): Promise<{ contentT
   const googleDomain = isIpLiteral(domain) ? normalizeIpLiteral(domain) : domain
   const url = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(googleDomain)}&sz=${size}`
   return fetchIconFromUrl(url)
-}
-
-async function fetchFromSiteOrigin(domain: string): Promise<{ contentType: string; body: Buffer }> {
-  const originHost = formatOriginHost(domain)
-  const candidates = [`https://${originHost}/favicon.ico`]
-  if (!isIpLiteral(domain) && !originHost.startsWith('www.')) {
-    candidates.push(`https://www.${domain}/favicon.ico`)
-  }
-
-  let lastError: unknown = null
-  for (const candidate of candidates) {
-    try {
-      return await fetchIconFromUrl(candidate)
-    } catch (e) {
-      lastError = e
-    }
-  }
-
-  throw lastError || new Error('Origin favicon fetch failed')
 }
 
 router.get('/', async (req: Request, res: Response) => {
@@ -366,29 +373,16 @@ router.get('/', async (req: Request, res: Response) => {
   let p = inflight.get(key)
   if (!p) {
     p = (async () => {
-      let googleError: unknown = null
-      if (!isIpLiteral(domain)) {
-        try {
-          const fresh = await fetchFromGoogle(domain, size)
-          await writeCache(key, fresh.contentType, fresh.body)
-          return fresh
-        } catch (e) {
-          googleError = e
-        }
-      }
-
       try {
-        const fallback = await fetchFromSiteOrigin(domain)
-        await writeCache(key, fallback.contentType, fallback.body)
-        return fallback
-      } catch (originError) {
-        const google404 = googleError instanceof UpstreamHttpError && googleError.status === 404
-        const origin404 = originError instanceof UpstreamHttpError && originError.status === 404
-        if (google404 && origin404) {
+        const fresh = await fetchFromGoogle(domain, size)
+        await writeCache(key, fresh.contentType, fresh.body)
+        return fresh
+      } catch (e) {
+        if (e instanceof UpstreamHttpError && e.status === 404) {
           await writeNegativeCache(key)
           return null
         }
-        throw googleError ?? originError
+        throw e
       }
     })()
     inflight.set(key, p)

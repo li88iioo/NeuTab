@@ -129,8 +129,8 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
   }
 
   // 模式 2: 图片模式（默认）- 按优先级逐级回退
-  // 特殊处理：保留内置的多彩 Google 图标
-  if (domain === "google.com") {
+  // 特殊处理：没有用户图标时保留内置的多彩 Google 图标。
+  if (domain === "google.com" && !localIcon && !customIcon) {
     return (
       <div className="smart-icon-wrapper">
         <GoogleColorIcon size={32} />

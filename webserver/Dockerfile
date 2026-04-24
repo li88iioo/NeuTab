@@ -15,7 +15,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 # Install workspace deps (copy package manifests first for better layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -51,16 +51,14 @@ WORKDIR /deps
 # better-sqlite3 needs build tools
 RUN apk add --no-cache python3 make g++
 
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/scripts/patch-plasmo-templates.mjs ./scripts/patch-plasmo-templates.mjs
 COPY --from=builder /app/webserver/server/package.json ./webserver/server/package.json
 
 WORKDIR /deps/webserver/server
-RUN pnpm install --prod --frozen-lockfile --lockfile-dir /deps
+RUN pnpm install --prod --ignore-workspace --frozen-lockfile --lockfile-dir /deps
 
 # =============================================================================
 # Stage 3: Runtime - Minimal Alpine image

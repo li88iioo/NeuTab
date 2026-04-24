@@ -350,8 +350,8 @@ function NewTab() {
       })
     }
 
-    // Prevent pinch-zoom on mobile/touch devices while keeping normal scrolling.
-    // (Some Chromium-based mobile browsers ignore `touch-action` for pinch gestures.)
+    // Keep the launcher viewport stable on touch devices; accidental pinch zoom
+    // makes dense quick-launch cards hard to hit and breaks the intended layout.
     const preventMultiTouchZoom = (e: TouchEvent) => {
       if (e.touches.length > 1) e.preventDefault()
     }
@@ -369,7 +369,6 @@ function NewTab() {
     window.addEventListener("scroll", handleScroll, { passive: true })
     document.addEventListener("touchstart", preventMultiTouchZoom, { passive: false })
     document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false })
-    // iOS Safari family (some WebViews) uses gesture events.
     document.addEventListener("gesturestart", preventGestureZoom, { passive: false } as AddEventListenerOptions)
     document.addEventListener("gesturechange", preventGestureZoom, { passive: false } as AddEventListenerOptions)
 

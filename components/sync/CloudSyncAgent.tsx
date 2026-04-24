@@ -39,17 +39,17 @@ export default function CloudSyncAgent() {
   const uploadIconsNextPushRef = useRef(true)
   const lastPrefsKeyRef = useRef("")
 
-  const schedulePush = () => {
+  const schedulePush = (delayMs = PUSH_DEBOUNCE_MS) => {
     void (async () => {
       const prefs = await readCloudSyncPrefs()
       if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
-      if (Date.now() < suppressPushUntilRef.current) return
 
       pendingPushRef.current = true
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+      const suppressDelay = Math.max(0, suppressPushUntilRef.current - Date.now())
       pushTimerRef.current = setTimeout(() => {
         void runPush()
-      }, PUSH_DEBOUNCE_MS)
+      }, Math.max(delayMs, suppressDelay))
     })()
   }
 
@@ -89,8 +89,15 @@ export default function CloudSyncAgent() {
   const runPush = async () => {
     const prefs = await readCloudSyncPrefs()
     if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
-    if (syncingRef.current) return
-    if (Date.now() < suppressPushUntilRef.current) return
+    if (syncingRef.current) {
+      schedulePush()
+      return
+    }
+    const suppressDelay = suppressPushUntilRef.current - Date.now()
+    if (suppressDelay > 0) {
+      schedulePush(suppressDelay)
+      return
+    }
 
     if (!pendingPushRef.current) return
     pendingPushRef.current = false
@@ -109,6 +116,7 @@ export default function CloudSyncAgent() {
       writeCloudSyncStatus({ action: "push", status: "failed", timestamp })
     } finally {
       syncingRef.current = false
+      if (pendingPushRef.current) schedulePush()
     }
   }
 
