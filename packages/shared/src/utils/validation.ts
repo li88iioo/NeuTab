@@ -133,5 +133,9 @@ export const sanitizeName = (name: string): string => {
 /** Best-effort color sanitizer (falls back to a safe default). */
 export const sanitizeHexColor = (color: string, fallback = "#6c5ce7"): string => {
   const c = String(color ?? "").trim()
-  return /^#[0-9A-Fa-f]{6}$/.test(c) ? c : fallback
+  if (/^#[0-9A-Fa-f]{6}$/.test(c)) return c
+  if (/^#[0-9A-Fa-f]{3}$/.test(c)) {
+    return `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
+  }
+  return fallback
 }

@@ -17,10 +17,13 @@ interface DataRecord<T> {
 
 let dbInstance: IDBDatabase | null = null
 let deviceId: string | null = null
+let lastHealthCheckAt = 0
+const HEALTH_CHECK_CACHE_MS = 5000
 
 // 错误处理辅助函数
 function handleTransactionError(operation: string, error: any): void {
   dbInstance = null
+  lastHealthCheckAt = 0
   console.error(`[IndexedDB] ${operation} failed:`, error)
 }
 
@@ -59,9 +62,14 @@ function getDeviceId(): string {
 
 // 打开数据库
 export async function openDB(): Promise<IDBDatabase> {
-  // 检查现有连接是否仍然有效
+  // 检查现有连接是否仍然有效（带缓存，避免高频调用路径重复检测）
   if (dbInstance) {
+    const now = Date.now()
+    if (now - lastHealthCheckAt < HEALTH_CHECK_CACHE_MS) {
+      return dbInstance
+    }
     const healthy = await isConnectionHealthy(dbInstance)
+    lastHealthCheckAt = Date.now()
     if (healthy) {
       return dbInstance
     }

@@ -82,5 +82,7 @@ export const restoreTheme = () => {
   }
 }
 
-// 立即运行
-restoreTheme()
+// 立即运行（仅在浏览器环境中执行，避免 SSR/测试环境副作用）
+if (typeof document !== "undefined" && typeof localStorage !== "undefined") {
+  restoreTheme()
+}

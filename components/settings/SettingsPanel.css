@@ -134,24 +134,6 @@
   border-radius: 10px;
 }
 
-.settings-menu-btn {
-  display: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  color: var(--txt-secondary);
-}
-
-.settings-title {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--txt-primary);
-}
-
 .settings-close {
   width: var(--settings-header-btn-size);
   height: var(--settings-header-btn-size);
@@ -214,41 +196,8 @@
 }
 
 /* ============================================
-   Navigation
+   Content Area with Animation
    ============================================ */
-
-.settings-nav {
-  width: 190px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-}
-
-.settings-nav-btn {
-  border: none;
-  padding: 12px 14px;
-  border-radius: 14px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--txt-secondary);
-  text-align: left;
-  font-family: inherit;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  line-height: 1;
-  transition: all 0.2s ease;
-}
-
-.settings-nav-btn:hover:not(.active) {
-  color: var(--txt-primary);
-  background: transparent;
-}
 
 .nav-icon {
   display: flex;
@@ -260,24 +209,6 @@
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
-
-
-.settings-nav-btn.active {
-  color: var(--txt-primary);
-  font-weight: 700;
-  background: var(--bg);
-  box-shadow: inset 3px 3px 6px var(--shadow-dark),
-    inset -3px -3px 6px var(--shadow-light);
-}
-
-.settings-nav-btn.active .nav-icon {
-  box-shadow: 2px 2px 4px var(--shadow-dark),
-    -2px -2px 4px var(--shadow-light);
-}
-
-/* ============================================
-   Content Area with Animation
-   ============================================ */
 
 .settings-content {
   flex: 1;
@@ -1051,10 +982,6 @@ body.dark .language-select-option:hover {
   .settings-top-nav-wrap {
     padding: 22px 12px;
     margin: -22px -12px;
-  }
-
-  .settings-menu-btn {
-    display: none;
   }
 
   .settings-body {

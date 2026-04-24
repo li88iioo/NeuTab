@@ -129,7 +129,10 @@ const main = () => {
 
 		// 处理 react-icons 图标
 		const Icon = resolveIcon(e.pack, e.iconName)
-		if (!Icon) continue
+		if (!Icon) {
+			console.warn(`Warning: Could not resolve icon ${e.pack}/${e.iconName}`)
+			continue
+		}
 
 		assets.set(assetKey, { fileName, varName })
 
@@ -177,4 +180,9 @@ const main = () => {
 	console.log(`Generated ${path.relative(repoRoot, outMapPath)}`)
 }
 
-main()
+try {
+	main()
+} catch (e) {
+	console.error("[generate-site-icons] Failed:", e)
+	process.exitCode = 1
+}

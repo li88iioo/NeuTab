@@ -18,8 +18,10 @@ import {
   buildBackupPayload as buildBackupPayloadFromStorage,
   cloudPull,
   cloudPush,
+  readCloudSyncPrefs,
   readCloudSyncStatus,
   writeCloudSyncStatus,
+  writeSecureAuthCode,
   type CloudSyncStatus
 } from "~utils/cloudSync"
 import "./SettingsPanel.css"
@@ -205,7 +207,8 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   // 云同步状态
   const [syncEnabled, setSyncEnabled] = useState(() => localStorage.getItem('syncEnabled') === 'true')
   const [syncServerUrl, setSyncServerUrl] = useState(() => localStorage.getItem('syncServerUrl') || '')
-  const [syncAuthCode, setSyncAuthCode] = useState(() => localStorage.getItem('syncAuthCode') || '')
+  const [syncAuthCode, setSyncAuthCode] = useState("")
+  const [isSyncAuthCodeReady, setIsSyncAuthCodeReady] = useState(false)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => localStorage.getItem('autoSyncEnabled') === 'true')
   const [lastSyncTime, setLastSyncTime] = useState(() => readCloudSyncStatus().lastSyncTime)
   const [lastSyncStatus, setLastSyncStatus] = useState(() => readCloudSyncStatus().lastSyncStatus)
@@ -265,9 +268,33 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   useEffect(() => {
     localStorage.setItem('syncEnabled', String(syncEnabled))
     localStorage.setItem('syncServerUrl', syncServerUrl)
-    localStorage.setItem('syncAuthCode', syncAuthCode)
     localStorage.setItem('autoSyncEnabled', String(autoSyncEnabled))
-  }, [syncEnabled, syncServerUrl, syncAuthCode, autoSyncEnabled])
+    if (isSyncAuthCodeReady) {
+      void writeSecureAuthCode(syncAuthCode)
+    }
+  }, [syncEnabled, syncServerUrl, syncAuthCode, autoSyncEnabled, isSyncAuthCodeReady])
+
+  // Load auth code from secure storage on mount
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const prefs = await readCloudSyncPrefs()
+        if (!cancelled) {
+          setSyncAuthCode(prefs.authCode)
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) {
+          setIsSyncAuthCodeReady(true)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Keep UI in sync with CloudSyncAgent (auto sync) status updates.
   useEffect(() => {

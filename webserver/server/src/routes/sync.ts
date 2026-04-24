@@ -66,7 +66,7 @@ let pushInProgress = false
 const writeTempFile = (targetPath: string, buffer: Buffer): string => {
   const rand = crypto.randomBytes(8).toString('hex')
   const tmpPath = `${targetPath}.tmp-${rand}`
-  fs.writeFileSync(tmpPath, buffer)
+  fs.writeFileSync(tmpPath, new Uint8Array(buffer))
   return tmpPath
 }
 
@@ -104,8 +104,11 @@ router.get('/pull', (req: Request, res: Response) => {
       data[key] = value
     }
 
-    const wantsV3 = String(req.query.v ?? '') === '3'
-    if (wantsV3) {
+    const wantsV2 = String(req.query.v ?? '') === '2'
+    const wantsV1 = String(req.query.v ?? '') === '1'
+
+    // Default to v3 (lightweight, no base64 icon data)
+    if (!wantsV1 && !wantsV2) {
       return res.json({
         version: 3,
         data: {
@@ -115,7 +118,7 @@ router.get('/pull', (req: Request, res: Response) => {
       })
     }
 
-    // 构建 customIcons（读取文件并编码为 base64）
+    // Legacy v2: include base64 icon data (heavy, kept for backward compat)
     const customIcons: Record<string, string> = {}
     for (const icon of icons) {
       const filePath = getIconPath(icon.filename)
@@ -125,8 +128,6 @@ router.get('/pull', (req: Request, res: Response) => {
         customIcons[icon.id] = `data:${icon.mime_type};base64,${base64}`
       }
     }
-
-    const wantsV2 = String(req.query.v ?? '') === '2'
 
     if (wantsV2) {
       return res.json({
@@ -138,8 +139,9 @@ router.get('/pull', (req: Request, res: Response) => {
       })
     }
 
+    // Legacy v1
     if (Object.keys(customIcons).length > 0) {
-      ;(data as any).customIcons = customIcons
+      ;(data as Record<string, unknown>).customIcons = customIcons
     }
 
     return res.json({
@@ -229,7 +231,7 @@ router.post('/push', (req: Request, res: Response) => {
         }
 
         const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
-        const hash = crypto.createHash('sha256').update(buffer).digest('hex')
+        const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
         const filename = `${hash}.${normalizedExt}`
         const existing = iconGet(appId)
 
@@ -245,9 +247,9 @@ router.post('/push', (req: Request, res: Response) => {
       }
     }
 
-    try {
-      const createdFiles = new Set<string>()
+    const createdFiles = new Set<string>()
 
+    try {
       for (const op of iconOps) {
         const targetPath = getIconPath(op.filename)
         if (writeBlobIfMissing(targetPath, op.buffer)) {
@@ -277,6 +279,13 @@ router.post('/push', (req: Request, res: Response) => {
         }
       }
     } catch (e) {
+      for (const filePath of createdFiles) {
+        try {
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+        } catch {
+          // ignore
+        }
+      }
       throw e
     }
 

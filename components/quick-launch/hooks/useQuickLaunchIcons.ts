@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type SetStateAction } from "react"
 import type { QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
 import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
 import { putIcon, getIcon, deleteIcon } from "~utils/indexedDB"
@@ -54,6 +54,51 @@ interface QuickLaunchIconsOptions {
 
 export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: QuickLaunchIconsOptions) => {
   const [iconCache, setIconCache] = useState<Record<string, string>>({})
+  const iconCacheRef = useRef<Record<string, string>>({})
+  const missingIdsRef = useRef<Set<string>>(new Set())
+  const [iconStorageRevision, setIconStorageRevision] = useState(0)
+
+  const updateIconCache = useCallback((nextValue: SetStateAction<Record<string, string>>) => {
+    setIconCache((prev) => {
+      const next = typeof nextValue === "function"
+        ? (nextValue as (prev: Record<string, string>) => Record<string, string>)(prev)
+        : nextValue
+      iconCacheRef.current = next
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
+      if (areaName !== "local") return
+
+      const changedIds: string[] = []
+      for (const key of Object.keys(changes)) {
+        if (!key.startsWith("icon_")) continue
+        const id = key.slice("icon_".length)
+        missingIdsRef.current.delete(id)
+        changedIds.push(id)
+      }
+
+      if (changedIds.length > 0) {
+        updateIconCache((prev) => {
+          const next = { ...prev }
+          for (const id of changedIds) delete next[id]
+          return next
+        })
+        setIconStorageRevision((prev) => prev + 1)
+      }
+    }
+
+    try {
+      chrome.storage.onChanged.addListener(onChanged)
+      return () => {
+        chrome.storage.onChanged.removeListener(onChanged)
+      }
+    } catch {
+      return undefined
+    }
+  }, [])
 
   useEffect(() => {
     if (isGroupsLoading || !groups?.length) {
@@ -68,7 +113,12 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
 
       const allApps = groups
         .flatMap((g) => g.apps)
-        .filter((app) => (app.iconStyle ?? "image") === "image" && !iconCache[app.id])
+        .filter((app) => {
+          if ((app.iconStyle ?? "image") !== "image") return false
+          if (iconCacheRef.current[app.id]) return false
+          if (app.hasLocalIcon === true) return true
+          return !missingIdsRef.current.has(app.id)
+        })
 
       const BATCH_SIZE = 5
       for (let i = 0; i < allApps.length; i += BATCH_SIZE) {
@@ -79,10 +129,13 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
           const localIcon = await getLocalIcon(app.id)
           if (localIcon) {
             newCache[app.id] = localIcon
+            missingIdsRef.current.delete(app.id)
             hasUpdates = true
             if (app.hasLocalIcon !== true) {
               idsMissingFlag.push(app.id)
             }
+          } else if (app.hasLocalIcon !== true) {
+            missingIdsRef.current.add(app.id)
           }
         }))
 
@@ -90,7 +143,10 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
       }
 
       if (active && hasUpdates) {
-        setIconCache(prev => ({ ...prev, ...newCache }))
+        updateIconCache(prev => {
+          const next = { ...prev, ...newCache }
+          return next
+        })
       }
 
       if (active && idsMissingFlag.length > 0) {
@@ -114,11 +170,11 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
 
     loadIcons()
     return () => { active = false }
-  }, [groups, isGroupsLoading])
+  }, [groups, iconStorageRevision, isGroupsLoading, updateIconCache])
 
   return {
     iconCache,
-    setIconCache,
+    setIconCache: updateIconCache,
     saveLocalIcon,
     getLocalIcon,
     removeLocalIcon

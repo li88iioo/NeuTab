@@ -46,21 +46,23 @@ function isSafeIconId(id: string): boolean {
   return SAFE_ICON_ID_RE.test(id)
 }
 
-function writeBlobIfMissing(targetPath: string, buffer: Buffer): void {
-  if (fs.existsSync(targetPath)) return
+function writeBlobIfMissing(targetPath: string, buffer: Buffer): boolean {
+  if (fs.existsSync(targetPath)) return false
   const rand = crypto.randomBytes(8).toString('hex')
   const tmpPath = `${targetPath}.tmp-${rand}`
-  fs.writeFileSync(tmpPath, buffer)
+  fs.writeFileSync(tmpPath, new Uint8Array(buffer))
   try {
     // If another request already created the same hash blob, overwriting is fine
     // because content is identical (same hash). Keep the logic simple.
     fs.renameSync(tmpPath, targetPath)
+    return true
   } catch {
     try {
       if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath)
     } catch {
       // ignore
     }
+    return false
   }
 }
 
@@ -97,17 +99,18 @@ router.post('/upload', authMiddleware, (req: Request, res: Response) => {
       return res.status(413).json({ error: 'Icon too large' })
     }
     const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
-    const hash = crypto.createHash('sha256').update(buffer).digest('hex')
+    const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
     const filename = `${hash}.${normalizedExt}`
     const filePath = getIconPath(filename)
 
     const existing = iconGet(id)
     const oldFilename = existing?.filename
+    let createdBlob = false
 
     try {
-      writeBlobIfMissing(filePath, buffer)
+      createdBlob = writeBlobIfMissing(filePath, buffer)
 
-      // Update DB after files are in place. On failure we rollback files.
+      // Update DB after files are in place.
       iconSet(id, filename, mimeType, buffer.length, hash)
 
       // Best-effort cleanup: remove old unreferenced blob.
@@ -119,6 +122,12 @@ router.post('/upload', authMiddleware, (req: Request, res: Response) => {
         }
       }
     } catch (e) {
+      // Rollback: remove the newly written file if DB update failed.
+      try {
+        if (createdBlob && fs.existsSync(filePath)) fs.unlinkSync(filePath)
+      } catch {
+        // ignore
+      }
       throw e
     }
 
@@ -151,18 +160,26 @@ router.post('/uploadRaw/:id', authMiddleware, rawIconParser, (req: Request, res:
   }
 
   const mimeType = contentType
-  const hash = crypto.createHash('sha256').update(buffer).digest('hex')
+  const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
   const filename = `${hash}.${normalizedExt}`
   const filePath = getIconPath(filename)
 
   try {
     const existing = iconGet(id)
     const oldFilename = existing?.filename
+    const createdBlob = writeBlobIfMissing(filePath, buffer)
 
-    writeBlobIfMissing(filePath, buffer)
-
-    // Update DB after files are in place. On failure we rollback files.
-    iconSet(id, filename, mimeType, buffer.length, hash)
+    try {
+      iconSet(id, filename, mimeType, buffer.length, hash)
+    } catch (e) {
+      // Rollback: remove the newly written file if DB update failed.
+      try {
+        if (createdBlob && fs.existsSync(filePath)) fs.unlinkSync(filePath)
+      } catch {
+        // ignore
+      }
+      throw e
+    }
 
     if (oldFilename && oldFilename !== filename && iconCountByFilename(oldFilename) === 0) {
       try {

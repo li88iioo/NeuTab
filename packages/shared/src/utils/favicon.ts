@@ -34,6 +34,9 @@ const isPrivateOrLocalHost = (hostname: string): boolean => {
   // localhost
   if (hostname === 'localhost') return true
 
+  // IPv6 loopback
+  if (hostname === '::1' || hostname === '[::1]') return true
+
   // 本地域名后缀
   if (/\.(local|lan|home|internal|localdomain)$/i.test(hostname)) return true
 
@@ -49,6 +52,17 @@ const isPrivateOrLocalHost = (hostname: string): boolean => {
     if (a === 192 && b === 168) return true
     // 127.x.x.x (loopback)
     if (a === 127) return true
+    // 169.254.x.x (link-local)
+    if (a === 169 && b === 254) return true
+  }
+
+  // IPv6 private/reserved (simplified check for common patterns)
+  if (hostname.includes(':')) {
+    const h = hostname.replace(/^\[|\]$/g, '').toLowerCase()
+    // fe80::/10 (link-local)
+    if (/^fe[89ab][0-9a-f]*:/i.test(h)) return true
+    // fc00::/7 (unique local address, includes fd00::/8)
+    if (/^f[cd][0-9a-f]*:/i.test(h)) return true
   }
 
   return false

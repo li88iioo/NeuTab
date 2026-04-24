@@ -3,6 +3,8 @@ import path from 'path'
 import crypto from 'crypto'
 import fs from 'fs'
 import fsp from 'fs/promises'
+import { lookup } from 'node:dns/promises'
+import { isIP } from 'node:net'
 import { DATA_DIR } from '../db.js'
 
 const router: ExpressRouter = Router()
@@ -105,12 +107,93 @@ const cleanupInterval = setInterval(() => {
 }, 6 * 60 * 60 * 1000)
 ;(cleanupInterval as any).unref?.()
 
+const normalizeIpLiteral = (value: string): string => {
+  const normalized = value.replace(/^\[|\]$/g, '').toLowerCase()
+  const ipv4Mapped = normalized.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/)
+  return ipv4Mapped ? ipv4Mapped[1] : normalized
+}
+
+const isIpLiteral = (value: string): boolean => isIP(normalizeIpLiteral(value)) !== 0
+
+const formatOriginHost = (value: string): string => {
+  const normalized = normalizeIpLiteral(value)
+  return isIP(normalized) === 6 ? `[${normalized}]` : normalized
+}
+
+const isPrivateOrReservedIp = (ip: string): boolean => {
+  const normalized = normalizeIpLiteral(ip)
+  const version = isIP(normalized)
+
+  if (version === 4) {
+    const parts = normalized.split('.').map((p) => Number(p))
+    const [a, b, c, d] = parts
+    if (parts.length !== 4 || parts.some((p) => !Number.isInteger(p) || p < 0 || p > 255)) return true
+    if (a === 127 || a === 10) return true
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(normalized)) return true
+    if (a === 192 && b === 168) return true
+    if (a === 169 && b === 254) return true
+    if (a === 0) return true
+    if (a === 100 && b >= 64 && b <= 127) return true
+    if (a === 192 && b === 0 && c === 0) return true
+    if (a === 192 && b === 0 && c === 2) return true
+    if (a === 198 && (b === 18 || b === 19)) return true
+    if (a === 198 && b === 51 && c === 100) return true
+    if (a === 203 && b === 0 && c === 113) return true
+    if (a >= 224) return true
+    if (a === 255 && b === 255 && c === 255 && d === 255) return true
+    return false
+  }
+
+  if (version === 6) {
+    if (normalized.startsWith('::ffff:')) return true
+    if (normalized === '::' || normalized === '::1') return true
+    if (/^fe[89ab][0-9a-f]*:/i.test(normalized)) return true
+    if (/^f[cd][0-9a-f]*:/i.test(normalized)) return true
+    if (/^ff[0-9a-f]*:/i.test(normalized)) return true
+    if (/^2001:db8:/i.test(normalized)) return true
+    return false
+  }
+
+  return false
+}
+
+const assertPublicFetchHost = async (hostname: string): Promise<void> => {
+  const normalized = normalizeIpLiteral(hostname)
+  if (isIP(normalized)) {
+    if (isPrivateOrReservedIp(normalized)) throw new Error('Blocked private favicon host')
+    return
+  }
+
+  const records = await lookup(normalized, { all: true, verbatim: true })
+  if (records.length === 0) throw new Error('Favicon host did not resolve')
+  if (records.some((record) => isPrivateOrReservedIp(record.address))) {
+    throw new Error('Blocked private favicon host')
+  }
+}
+
+const assertPublicFetchUrl = async (rawUrl: string): Promise<URL> => {
+  const url = new URL(rawUrl)
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Unsupported favicon URL protocol')
+  }
+  await assertPublicFetchHost(url.hostname)
+  return url
+}
+
 const isValidDomain = (domain: string): boolean => {
-  const d = domain.trim()
+  const d = domain.trim().toLowerCase()
   if (!d || d.length > 255) return false
-  // Hostname or IPv4. Keep strict enough to avoid weird cache-busting junk.
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(d)) return true
-  if (d === 'localhost') return true
+
+  if (isIpLiteral(d)) {
+    return !isPrivateOrReservedIp(d)
+  }
+
+  // Block localhost
+  if (d === 'localhost') return false
+
+  // Block .local, .internal, .localhost TLDs
+  if (/\.(local|internal|localhost)$/i.test(d)) return false
+
   return /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(d)
 }
 
@@ -188,22 +271,37 @@ const normalizeIconContentType = (contentTypeHeader: string | null, urlHint: str
 }
 
 async function fetchIconFromUrl(url: string): Promise<{ contentType: string; body: Buffer }> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+  let currentUrl = url
+  let res: globalThis.Response | null = null
 
-  const res = await fetch(url, {
-    signal: controller.signal,
-    redirect: 'follow',
-    headers: {
-      'User-Agent': 'NeuTabFaviconProxy/1.0'
-    }
-  }).finally(() => clearTimeout(timer))
+  for (let redirectCount = 0; redirectCount <= 5; redirectCount += 1) {
+    const parsed = await assertPublicFetchUrl(currentUrl)
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+
+    res = await fetch(parsed, {
+      signal: controller.signal,
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'NeuTabFaviconProxy/1.0'
+      }
+    }).finally(() => clearTimeout(timer))
+
+    if (res.status < 300 || res.status >= 400) break
+
+    const nextUrl = res.headers.get('location')
+    if (!nextUrl) throw new Error('Redirect missing location')
+    currentUrl = new URL(nextUrl, parsed).toString()
+  }
+
+  if (!res) throw new Error('Favicon fetch failed')
+  if (res.status >= 300 && res.status < 400) throw new Error('Too many favicon redirects')
 
   if (!res.ok) {
     throw new UpstreamHttpError(res.status)
   }
 
-  const contentType = normalizeIconContentType(res.headers.get('content-type'), url)
+  const contentType = normalizeIconContentType(res.headers.get('content-type'), currentUrl)
   if (!contentType) {
     throw new Error(`Unexpected content-type: ${res.headers.get('content-type') || '(missing)'}`)
   }
@@ -218,13 +316,15 @@ async function fetchIconFromUrl(url: string): Promise<{ contentType: string; bod
 }
 
 async function fetchFromGoogle(domain: string, size: number): Promise<{ contentType: string; body: Buffer }> {
-  const url = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`
+  const googleDomain = isIpLiteral(domain) ? normalizeIpLiteral(domain) : domain
+  const url = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(googleDomain)}&sz=${size}`
   return fetchIconFromUrl(url)
 }
 
 async function fetchFromSiteOrigin(domain: string): Promise<{ contentType: string; body: Buffer }> {
-  const candidates = [`https://${domain}/favicon.ico`]
-  if (!domain.startsWith('www.')) {
+  const originHost = formatOriginHost(domain)
+  const candidates = [`https://${originHost}/favicon.ico`]
+  if (!isIpLiteral(domain) && !originHost.startsWith('www.')) {
     candidates.push(`https://www.${domain}/favicon.ico`)
   }
 
@@ -267,12 +367,14 @@ router.get('/', async (req: Request, res: Response) => {
   if (!p) {
     p = (async () => {
       let googleError: unknown = null
-      try {
-        const fresh = await fetchFromGoogle(domain, size)
-        await writeCache(key, fresh.contentType, fresh.body)
-        return fresh
-      } catch (e) {
-        googleError = e
+      if (!isIpLiteral(domain)) {
+        try {
+          const fresh = await fetchFromGoogle(domain, size)
+          await writeCache(key, fresh.contentType, fresh.body)
+          return fresh
+        } catch (e) {
+          googleError = e
+        }
       }
 
       try {

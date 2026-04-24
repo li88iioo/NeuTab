@@ -6,6 +6,7 @@ type CacheEntry = {
 }
 
 // In-memory, session-scoped cache. Avoid persistent storage to reduce "network scanning" concerns.
+const MAX_CACHE_ENTRIES = 200
 const reachabilityCache = new Map<string, CacheEntry>()
 const inflightProbes = new Map<string, Promise<boolean>>()
 
@@ -110,6 +111,13 @@ export const ensureInternalUrlProbed = async (opts: {
 
   const p = (async () => {
     const ok = await probeHttpReachable(internalUrl, opts.timeoutMs)
+
+    // Evict oldest entry if at capacity
+    if (reachabilityCache.size >= MAX_CACHE_ENTRIES) {
+      const firstKey = reachabilityCache.keys().next().value
+      if (firstKey) reachabilityCache.delete(firstKey)
+    }
+
     reachabilityCache.set(key, {
       ok,
       expiresAt: now() + (ok ? cacheTtlMs : negativeCacheTtlMs)

@@ -19,16 +19,46 @@ export type NormalizedBackupImport = {
   }
 }
 
-export function resolveBackupData(raw: Record<string, any>): Record<string, any> {
+/** Typed shape of a raw backup payload (both v1 flat and v2 nested). */
+interface RawBackupSettings {
+  settings?: Record<string, unknown>
+  customIcons?: Record<string, unknown>
+  searchEngines?: unknown
+  currentEngine?: unknown
+  themeMode?: unknown
+  darkMode?: unknown
+  visualTheme?: unknown
+  language?: unknown
+  showClock?: unknown
+  showSeconds?: unknown
+  showSearchBar?: unknown
+  showTopSites?: unknown
+  showRecentHistory?: unknown
+  searchOpenInNewWindow?: unknown
+  contentMaxWidth?: unknown
+  contentPaddingX?: unknown
+  contentPaddingTop?: unknown
+  contentPaddingBottom?: unknown
+  iconBorderRadius?: unknown
+  cardSize?: unknown
+  siteTitle?: unknown
+  siteFavicon?: unknown
+  quickLaunchGroups?: unknown
+  quickLaunchApps?: unknown
+  autoSelectInternalUrl?: unknown
+  [key: string]: unknown
+}
+
+export function resolveBackupData(raw: RawBackupSettings): Record<string, unknown> {
   const settings = raw?.settings
   if (settings && typeof settings === "object") {
-    const merged: Record<string, any> = { ...(settings as any) }
+    const merged: Record<string, unknown> = { ...(settings as Record<string, unknown>) }
     if (raw.customIcons && typeof raw.customIcons === "object") {
       merged.customIcons = raw.customIcons
     }
     return merged
   }
-  return raw
+  return raw as Record<string, unknown>
 }
 
 const coerceBoolean = (value: unknown): boolean | undefined => {
@@ -37,7 +67,7 @@ const coerceBoolean = (value: unknown): boolean | undefined => {
   return undefined
 }
 
-export function normalizeBackupImport(raw: Record<string, any>, language: Language): NormalizedBackupImport {
+export function normalizeBackupImport(raw: RawBackupSettings, language: Language): NormalizedBackupImport {
   const t = getTranslations(language)
   const resolved = resolveBackupData(raw)
 
@@ -45,17 +75,17 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
   const meta: NormalizedBackupImport["meta"] = {}
 
   if ("searchEngines" in resolved) {
-    const engines = normalizeEngines((resolved as any).searchEngines)
+    const engines = normalizeEngines(resolved.searchEngines)
     if (engines) updates.searchEngines = engines
   }
-  if ("currentEngine" in resolved) updates.currentEngine = String((resolved as any).currentEngine ?? "")
+  if ("currentEngine" in resolved) updates.currentEngine = String(resolved.currentEngine ?? "")
 
   // themeMode (兼容旧字段 darkMode)
   const importedThemeMode = (() => {
-    const v = (resolved as any)?.themeMode
+    const v = resolved.themeMode
     if (v === "auto" || v === "light" || v === "dark") return v as ThemeMode
     if ("darkMode" in resolved) {
-      const coerced = coerceBoolean((resolved as any).darkMode)
+      const coerced = coerceBoolean(resolved.darkMode)
       if (coerced === undefined) return undefined
       return coerced ? "dark" : "light"
     }
@@ -67,7 +97,7 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
   }
 
   const importedVisualTheme = (() => {
-    const v = (resolved as any)?.visualTheme
+    const v = resolved.visualTheme
     if (v === "neumorphic" || v === "liquid-glass") return v as VisualTheme
     return undefined
   })()
@@ -77,7 +107,7 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
   }
 
   const importedLanguage = (() => {
-    const v = (resolved as any)?.language
+    const v = resolved.language
     if (v === "zh" || v === "en") return v as Language
     return undefined
   })()
@@ -87,43 +117,43 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
   }
 
   // groups
-  const importedGroups = normalizeGroups((resolved as any).quickLaunchGroups, language)
+  const importedGroups = normalizeGroups(resolved.quickLaunchGroups, language)
   const groups = importedGroups
     ? importedGroups
-    : Array.isArray((resolved as any).quickLaunchApps)
-      ? [{ id: "default", name: t.default, apps: (resolved as any).quickLaunchApps }]
+    : Array.isArray(resolved.quickLaunchApps)
+      ? [{ id: "default", name: t.default, apps: resolved.quickLaunchApps }]
       : undefined
 
   // booleans
   for (const key of ["showClock", "showSeconds", "showSearchBar", "showTopSites", "showRecentHistory", "searchOpenInNewWindow"] as const) {
     if (!(key in resolved)) continue
-    const v = coerceBoolean((resolved as any)[key])
+    const v = coerceBoolean(resolved[key])
     if (v !== undefined) updates[key] = v
   }
 
   // layout numbers (clamp)
   if ("contentMaxWidth" in resolved) {
-    updates.contentMaxWidth = clampNumber(Number((resolved as any).contentMaxWidth), LAYOUT_LIMITS.maxWidth.min, LAYOUT_LIMITS.maxWidth.max)
+    updates.contentMaxWidth = clampNumber(Number(resolved.contentMaxWidth), LAYOUT_LIMITS.maxWidth.min, LAYOUT_LIMITS.maxWidth.max)
   }
   if ("contentPaddingX" in resolved) {
-    updates.contentPaddingX = clampNumber(Number((resolved as any).contentPaddingX), LAYOUT_LIMITS.paddingX.min, LAYOUT_LIMITS.paddingX.max)
+    updates.contentPaddingX = clampNumber(Number(resolved.contentPaddingX), LAYOUT_LIMITS.paddingX.min, LAYOUT_LIMITS.paddingX.max)
   }
   if ("contentPaddingTop" in resolved) {
-    updates.contentPaddingTop = clampNumber(Number((resolved as any).contentPaddingTop), LAYOUT_LIMITS.paddingTop.min, LAYOUT_LIMITS.paddingTop.max)
+    updates.contentPaddingTop = clampNumber(Number(resolved.contentPaddingTop), LAYOUT_LIMITS.paddingTop.min, LAYOUT_LIMITS.paddingTop.max)
   }
   if ("contentPaddingBottom" in resolved) {
-    updates.contentPaddingBottom = clampNumber(Number((resolved as any).contentPaddingBottom), LAYOUT_LIMITS.paddingBottom.min, LAYOUT_LIMITS.paddingBottom.max)
+    updates.contentPaddingBottom = clampNumber(Number(resolved.contentPaddingBottom), LAYOUT_LIMITS.paddingBottom.min, LAYOUT_LIMITS.paddingBottom.max)
   }
   if ("iconBorderRadius" in resolved) {
-    updates.iconBorderRadius = clampNumber(Number((resolved as any).iconBorderRadius), LAYOUT_LIMITS.iconBorderRadius.min, LAYOUT_LIMITS.iconBorderRadius.max)
+    updates.iconBorderRadius = clampNumber(Number(resolved.iconBorderRadius), LAYOUT_LIMITS.iconBorderRadius.min, LAYOUT_LIMITS.iconBorderRadius.max)
   }
   if ("cardSize" in resolved) {
-    updates.cardSize = clampNumber(Number((resolved as any).cardSize), LAYOUT_LIMITS.cardSize.min, LAYOUT_LIMITS.cardSize.max)
+    updates.cardSize = clampNumber(Number(resolved.cardSize), LAYOUT_LIMITS.cardSize.min, LAYOUT_LIMITS.cardSize.max)
   }
 
-  if ("siteTitle" in resolved) updates.siteTitle = sanitizeName(String((resolved as any).siteTitle ?? ""))
+  if ("siteTitle" in resolved) updates.siteTitle = sanitizeName(String(resolved.siteTitle ?? ""))
   if ("siteFavicon" in resolved) {
-    const rawFavicon = String((resolved as any).siteFavicon ?? "").trim()
+    const rawFavicon = String(resolved.siteFavicon ?? "").trim()
     const safeFavicon = (() => {
       if (!rawFavicon) return ""
       if (rawFavicon.startsWith("data:image/")) return rawFavicon
@@ -142,7 +172,7 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
     if (!(key in resolved)) continue
     if (key === "themeMode" || key === "visualTheme" || key === "language" || key === "siteTitle" || key === "siteFavicon") continue
 
-    const value = (resolved as any)[key]
+    const value = resolved[key]
     if (typeof defValue === "boolean") {
       const v = coerceBoolean(value)
       if (v !== undefined) updates[key] = v
@@ -168,7 +198,7 @@ export function normalizeBackupImport(raw: Record<string, any>, language: Langua
 
   // icons
   const customIcons = (() => {
-    const rawIcons = (resolved as any)?.customIcons
+    const rawIcons = resolved.customIcons
     if (!rawIcons || typeof rawIcons !== "object") return undefined
     const next: Record<string, string> = Object.create(null)
     for (const [appId, base64] of Object.entries(rawIcons as Record<string, unknown>)) {

@@ -133,6 +133,11 @@ app.use('/api/icons', iconsRoutes)
 app.use('/api/sync', syncRoutes)
 app.use('/api/favicon', faviconRoutes)
 
+// Health check endpoint for Docker healthcheck / load balancers
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' })
+})
+
 // Serve static files.
 // Keep this resilient to different build layouts:
 // - legacy docker layout: /app/dist + /app/client/dist

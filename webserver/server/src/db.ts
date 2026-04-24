@@ -56,6 +56,8 @@ db.exec(`
     hash       TEXT,
     created_at INTEGER DEFAULT (unixepoch())
   );
+
+  CREATE INDEX IF NOT EXISTS idx_icons_filename ON icons(filename);
 `)
 
 function ensureIconsSchema(): void {
@@ -217,12 +219,12 @@ function migrateFromJson(): void {
             const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
             const mimeType = `image/${ext}`
             const buffer = Buffer.from(base64Data, 'base64')
-            const hash = crypto.createHash('sha256').update(buffer).digest('hex')
+            const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
             const filename = `${hash}.${normalizedExt}`
             const filePath = getIconPath(filename)
 
             if (!fs.existsSync(filePath)) {
-              fs.writeFileSync(filePath, buffer)
+              fs.writeFileSync(filePath, new Uint8Array(buffer))
             }
             statements.iconSet.run(appId, filename, mimeType, buffer.length, hash)
             console.log(`[Migration] Migrated icon: ${appId}`)
@@ -259,7 +261,7 @@ function migrateExistingIconFiles(): void {
       if (!fs.existsSync(filePath)) continue
 
       const buffer = fs.readFileSync(filePath)
-      const hash = crypto.createHash('sha256').update(buffer).digest('hex')
+      const hash = crypto.createHash('sha256').update(new Uint8Array(buffer)).digest('hex')
       const ext = path.extname(row.filename).slice(1) || 'png'
       const normalizedExt = ext === 'jpeg' ? 'jpg' : ext
       const newFilename = `${hash}.${normalizedExt}`

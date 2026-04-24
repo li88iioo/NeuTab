@@ -29,11 +29,53 @@ const SETTINGS_STORAGE = new Storage()
 const LAST_SYNC_TIME_KEY = "lastSyncTime"
 const LAST_SYNC_STATUS_KEY = "lastSyncStatus"
 
-export function readCloudSyncPrefs(): CloudSyncPrefs {
+const AUTH_CODE_STORAGE_KEY = "syncAuthCode"
+
+const isExtensionContext = typeof chrome !== "undefined" && !!chrome.storage?.local
+
+async function readSecureAuthCode(): Promise<string> {
+  const legacyCode = () => String(window.localStorage.getItem(AUTH_CODE_STORAGE_KEY) || "").trim()
+
+  if (isExtensionContext) {
+    try {
+      const result = await chrome.storage.local.get(AUTH_CODE_STORAGE_KEY)
+      const storedCode = String(result?.[AUTH_CODE_STORAGE_KEY] || "").trim()
+      if (storedCode) {
+        window.localStorage.removeItem(AUTH_CODE_STORAGE_KEY)
+        return storedCode
+      }
+
+      const code = legacyCode()
+      if (code) {
+        await chrome.storage.local.set({ [AUTH_CODE_STORAGE_KEY]: code })
+        window.localStorage.removeItem(AUTH_CODE_STORAGE_KEY)
+      }
+      return code
+    } catch {
+      // fallback
+    }
+  }
+  return legacyCode()
+}
+
+export async function writeSecureAuthCode(code: string): Promise<void> {
+  if (isExtensionContext) {
+    try {
+      await chrome.storage.local.set({ [AUTH_CODE_STORAGE_KEY]: code })
+      window.localStorage.removeItem(AUTH_CODE_STORAGE_KEY)
+      return
+    } catch {
+      // fallback
+    }
+  }
+  window.localStorage.setItem(AUTH_CODE_STORAGE_KEY, code)
+}
+
+export async function readCloudSyncPrefs(): Promise<CloudSyncPrefs> {
   const syncEnabled = window.localStorage.getItem("syncEnabled") === "true"
   const autoSyncEnabled = window.localStorage.getItem("autoSyncEnabled") === "true"
   const serverUrl = String(window.localStorage.getItem("syncServerUrl") || "").trim()
-  const authCode = String(window.localStorage.getItem("syncAuthCode") || "").trim()
+  const authCode = await readSecureAuthCode()
   return { syncEnabled, autoSyncEnabled, serverUrl, authCode }
 }
 
@@ -77,7 +119,7 @@ const commitLayoutCache = (key: string, value: unknown) => {
   }
 }
 
-export async function applyImportDataToStorage(raw: Record<string, any>, language: Language): Promise<void> {
+export async function applyImportDataToStorage(raw: Record<string, unknown>, language: Language): Promise<void> {
   const { updates, groups, customIcons, meta } = normalizeBackupImport(raw, language)
 
   if (Object.keys(updates).length > 0) {

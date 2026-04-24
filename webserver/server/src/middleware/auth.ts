@@ -7,9 +7,22 @@ import jwt from 'jsonwebtoken'
 
 const AUTH_CODE = process.env.AUTH_CODE
 
+if (AUTH_CODE === 'CHANGE_ME_ON_DEPLOY') {
+  throw new Error('[Auth] AUTH_CODE must be changed from the default placeholder before starting the server')
+}
+
+if (!AUTH_CODE && process.env.NODE_ENV === 'production') {
+  throw new Error('[Auth] AUTH_CODE must be set in production')
+}
+
 const JWT_SECRET: string = (() => {
   const secret = process.env.JWT_SECRET
-  if (secret) return secret
+  if (secret) {
+    if (secret === 'CHANGE_ME_ON_DEPLOY') {
+      throw new Error('[Auth] JWT_SECRET must be changed from the default placeholder before starting the server')
+    }
+    return secret
+  }
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET must be set in production')

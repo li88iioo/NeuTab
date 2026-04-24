@@ -26,7 +26,7 @@ COPY webserver/package.json webserver/package.json
 COPY webserver/client/package.json webserver/client/package.json
 COPY webserver/server/package.json webserver/server/package.json
 
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy sources
 COPY packages ./packages
@@ -42,7 +42,7 @@ RUN pnpm --filter neutab-web-client build
 RUN pnpm --filter neutab-web-server build
 
 # =============================================================================
-# Stage 2: Production deps - Clean install for server only (Alpine)
+# Stage 2: Production deps - Install server-only production deps with pnpm
 # =============================================================================
 FROM node:20-alpine AS deps
 
@@ -51,9 +51,16 @@ WORKDIR /deps
 # better-sqlite3 needs build tools
 RUN apk add --no-cache python3 make g++
 
-# Copy package.json and package-lock.json for reproducible installs
-COPY webserver/server/package.json webserver/server/package-lock.json ./
-RUN npm ci --omit=dev
+RUN corepack enable
+
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/scripts/patch-plasmo-templates.mjs ./scripts/patch-plasmo-templates.mjs
+COPY --from=builder /app/webserver/server/package.json ./webserver/server/package.json
+
+WORKDIR /deps/webserver/server
+RUN pnpm install --prod --frozen-lockfile --lockfile-dir /deps
 
 # =============================================================================
 # Stage 3: Runtime - Minimal Alpine image
@@ -67,21 +74,26 @@ ENV CLIENT_DIST_DIR=/app/client/dist
 
 WORKDIR /app
 
-# Copy production dependencies (clean, server-only)
-COPY --from=deps /deps/node_modules ./server/node_modules
+# Create non-root user for runtime
+RUN addgroup -S neutab && adduser -S neutab -G neutab
+
+COPY --from=deps /deps/node_modules ./node_modules
+COPY --from=deps /deps/webserver/server/node_modules ./webserver/server/node_modules
 
 # Copy server build output
-COPY --from=builder /app/webserver/server/dist ./server/dist
-COPY --from=builder /app/webserver/server/package.json ./server/package.json
+COPY --from=builder /app/webserver/server/dist ./webserver/server/dist
+COPY --from=builder /app/webserver/server/package.json ./webserver/server/package.json
 
 # Copy client static files
 COPY --from=builder /app/webserver/client/dist ./client/dist
 
-# Create data directories
-RUN mkdir -p /app/data/icons
+# Create data directories and set ownership
+RUN mkdir -p /app/data/icons && chown -R neutab:neutab /app/data
 
 EXPOSE 3001
 
-WORKDIR /app/server
+USER neutab
+
+WORKDIR /app/webserver/server
 
 CMD ["node", "dist/index.js"]

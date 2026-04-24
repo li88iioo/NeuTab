@@ -7,8 +7,15 @@ import LetterAvatar from "./LetterAvatar"
 import type { IconStyle } from "@neutab/shared/types/quickLaunch"
 import "./SmartIcon.css"
 
-const MAX_FAVICON_RETRIES = 6
-const FAVICON_RETRY_BASE_MS = 1500
+const MAX_FAVICON_RETRIES = 3
+const FAVICON_RETRY_BASE_MS = 3000
+
+/**
+ * Global negative cache: tracks favicon URLs that have permanently failed.
+ * Prevents re-triggering retry loops across SmartIcon instances for the same URL.
+ */
+const failedFaviconCache = new Set<string>()
+const MAX_FAILED_CACHE_SIZE = 500
 
 /**
  * SmartIcon 组件属性
@@ -93,15 +100,26 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
     if (!shouldUseFaviconAutoRetry) return
     if (srcIndex <= 0) return
     if (faviconRetryCount >= MAX_FAVICON_RETRIES) return
+    if (baseFaviconUrl && failedFaviconCache.has(baseFaviconUrl)) return
 
     const delay = Math.min(30_000, FAVICON_RETRY_BASE_MS * (2 ** faviconRetryCount))
     const timer = window.setTimeout(() => {
       setFaviconRevision((prev) => prev + 1)
-      setFaviconRetryCount((prev) => prev + 1)
+      setFaviconRetryCount((prev) => {
+        const next = prev + 1
+        if (next >= MAX_FAVICON_RETRIES && baseFaviconUrl) {
+          if (failedFaviconCache.size >= MAX_FAILED_CACHE_SIZE) {
+            const first = failedFaviconCache.values().next().value
+            if (first) failedFaviconCache.delete(first)
+          }
+          failedFaviconCache.add(baseFaviconUrl)
+        }
+        return next
+      })
     }, delay)
 
     return () => window.clearTimeout(timer)
-  }, [shouldUseFaviconAutoRetry, srcIndex, faviconRetryCount])
+  }, [shouldUseFaviconAutoRetry, srcIndex, faviconRetryCount, baseFaviconUrl])
 
   // 模式 1: 文本模式 - 显示自定义文本或首字母
   if (effectiveStyle === "text") {

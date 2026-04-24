@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import type { QuickLaunchApp, QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
 import { DEFAULT_GROUPS } from "@neutab/shared/utils/quickLaunchDefaults"
@@ -145,7 +145,7 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleSyncRef = useRef<number | null>(null)
   const syncRevisionRef = useRef(0)
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (isGroupsLoading || !groups || groups.length === 0) return
 
     const currentHash = hashGroups(groups)

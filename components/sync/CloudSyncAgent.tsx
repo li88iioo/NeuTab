@@ -40,19 +40,21 @@ export default function CloudSyncAgent() {
   const lastPrefsKeyRef = useRef("")
 
   const schedulePush = () => {
-    const prefs = readCloudSyncPrefs()
-    if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
-    if (Date.now() < suppressPushUntilRef.current) return
+    void (async () => {
+      const prefs = await readCloudSyncPrefs()
+      if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
+      if (Date.now() < suppressPushUntilRef.current) return
 
-    pendingPushRef.current = true
-    if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
-    pushTimerRef.current = setTimeout(() => {
-      void runPush()
-    }, PUSH_DEBOUNCE_MS)
+      pendingPushRef.current = true
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+      pushTimerRef.current = setTimeout(() => {
+        void runPush()
+      }, PUSH_DEBOUNCE_MS)
+    })()
   }
 
   const runPull = async () => {
-    const prefs = readCloudSyncPrefs()
+    const prefs = await readCloudSyncPrefs()
     if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
     if (syncingRef.current) return
 
@@ -85,7 +87,7 @@ export default function CloudSyncAgent() {
   }
 
   const runPush = async () => {
-    const prefs = readCloudSyncPrefs()
+    const prefs = await readCloudSyncPrefs()
     if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
     if (syncingRef.current) return
     if (Date.now() < suppressPushUntilRef.current) return
@@ -113,47 +115,51 @@ export default function CloudSyncAgent() {
   useEffect(() => {
     // Trigger auto pull when prefs turn on (polling, because prefs live in localStorage).
     const poll = () => {
-      const prefs = readCloudSyncPrefs()
-      const key = `${prefs.syncEnabled}|${prefs.autoSyncEnabled}|${prefs.serverUrl}|${prefs.authCode}`
-      if (key !== lastPrefsKeyRef.current) {
-        lastPrefsKeyRef.current = key
-        if (prefs.syncEnabled && prefs.autoSyncEnabled && prefs.serverUrl && prefs.authCode) {
-          uploadIconsNextPushRef.current = true
-          void runPull()
+      void (async () => {
+        const prefs = await readCloudSyncPrefs()
+        const key = `${prefs.syncEnabled}|${prefs.autoSyncEnabled}|${prefs.serverUrl}|${prefs.authCode}`
+        if (key !== lastPrefsKeyRef.current) {
+          lastPrefsKeyRef.current = key
+          if (prefs.syncEnabled && prefs.autoSyncEnabled && prefs.serverUrl && prefs.authCode) {
+            uploadIconsNextPushRef.current = true
+            void runPull()
+          }
         }
-      }
+      })()
     }
 
     poll()
     const interval = setInterval(poll, 2000)
 
     const onChanged = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-      const prefs = readCloudSyncPrefs()
-      if (!prefs.syncEnabled || !prefs.autoSyncEnabled) return
+      void (async () => {
+        const prefs = await readCloudSyncPrefs()
+        if (!prefs.syncEnabled || !prefs.autoSyncEnabled) return
 
-      if (areaName === "local") {
-        for (const key of Object.keys(changes)) {
-          if (key.startsWith("icon_")) {
-            uploadIconsNextPushRef.current = true
-            schedulePush()
-            return
+        if (areaName === "local") {
+          for (const key of Object.keys(changes)) {
+            if (key.startsWith("icon_")) {
+              uploadIconsNextPushRef.current = true
+              schedulePush()
+              return
+            }
+            if (key === "quickLaunchGroups") {
+              schedulePush()
+              return
+            }
           }
-          if (key === "quickLaunchGroups") {
-            schedulePush()
-            return
+          return
+        }
+
+        if (areaName === "sync") {
+          for (const key of Object.keys(changes)) {
+            if (isRelevantSyncKey(key)) {
+              schedulePush()
+              return
+            }
           }
         }
-        return
-      }
-
-      if (areaName === "sync") {
-        for (const key of Object.keys(changes)) {
-          if (isRelevantSyncKey(key)) {
-            schedulePush()
-            return
-          }
-        }
-      }
+      })()
     }
 
     try {
