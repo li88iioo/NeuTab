@@ -179,6 +179,11 @@ pnpm dev
 # 开发模式（Firefox）
 pnpm dev:firefox
 
+# 开发模式（Web：同时启动前端 5173 与后端 3001）
+cp webserver/.env.example webserver/.env
+# 编辑 webserver/.env 设置 AUTH_CODE 和 JWT_SECRET
+pnpm --dir webserver dev
+
 # 构建生产版本
 pnpm build
 pnpm build:firefox
@@ -195,6 +200,12 @@ pnpm package:firefox
 ```bash
 pnpm -w approve-builds
 pnpm -w rebuild better-sqlite3
+```
+
+如果切换过 Node 版本后 Web 后端启动时报 `NODE_MODULE_VERSION` 不匹配，请在当前 Node 版本下重编译：
+
+```bash
+npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
 ```
 
 ---

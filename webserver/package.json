@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "install:all": "cd .. && pnpm install",
+    "dev": "cd .. && pnpm --parallel --filter neutab-web-server --filter neutab-web-client dev",
     "build:shared": "cd .. && pnpm --filter @neutab/shared build && pnpm --filter @neutab/ui build",
     "build:client": "cd .. && pnpm --filter neutab-web-client build",
     "build:server": "cd .. && pnpm --filter neutab-web-server build",

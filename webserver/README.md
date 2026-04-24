@@ -51,23 +51,42 @@ docker run -d -p 3001:3001 \
 ## 本地开发
 
 ```bash
-cd webserver
-
-# 安装依赖
+# 从仓库根目录执行
 pnpm install
-
-# 启动前端 (http://localhost:5173，代理 /api 到 3001)
-pnpm --filter neutab-web-client dev
-
-# 启动后端 (http://localhost:3001)
-pnpm --filter neutab-web-server dev
+cp webserver/.env.example webserver/.env
+# 编辑 webserver/.env 设置 AUTH_CODE 和 JWT_SECRET
+pnpm --dir webserver dev
 ```
+
+本地开发会同时启动：
+- 前端：`http://localhost:5173`
+- 后端：`http://localhost:3001`
+
+前端 Vite 会把 `/api` 代理到 `localhost:3001`。如果只启动 `neutab-web-client`，登录接口没有后端可用，会出现登录失败或服务端配置错误。
+
+也可以分开启动：
+
+```bash
+# 终端 1：后端 API
+pnpm --filter neutab-web-server dev
+
+# 终端 2：前端 Vite
+pnpm --filter neutab-web-client dev
+```
+
+本地 `.env` 默认放在 `webserver/.env`。后端支持从仓库根目录、`webserver/` 或 `webserver/server/` 启动时自动读取该文件。
 
 **注意**：`better-sqlite3` 是原生模块，如果 pnpm 禁用了构建脚本：
 
 ```bash
 pnpm -w approve-builds
 pnpm -w rebuild better-sqlite3
+```
+
+如果切换过 Node 版本后仍报 `NODE_MODULE_VERSION` 不匹配，请按当前 Node 版本重编译：
+
+```bash
+npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
 ```
 
 ---
@@ -235,11 +254,43 @@ Docker 部署时挂载 `./data:/app/data` 实现数据持久化。
 
 ## 故障排查
 
+### 登录提示“服务端未配置访问码（AUTH_CODE）”
+
+优先检查三件事：
+
+1. 确认 `webserver/.env` 存在，并且已设置非空 `AUTH_CODE`。
+2. 确认后端正在监听 `http://localhost:3001`，不要只启动前端 Vite。
+3. 本地开发建议直接运行 `pnpm --dir webserver dev`，它会同时启动前端和后端。
+
+如果后端启动失败，先查看终端日志；常见原因是 `better-sqlite3` 原生模块 ABI 与当前 Node 版本不匹配。
+
+### 启动时报 `EADDRINUSE: address already in use :::3001`
+
+说明已有进程占用了后端端口 `3001`，通常是上一次启动的 `neutab-web-server` 还在运行，或 Docker 容器已经占用了该端口。
+
+处理方式：
+
+```bash
+# 查看占用 3001 的进程
+ss -ltnp | grep ':3001'
+
+# 停掉旧进程，或改用其他端口
+PORT=3002 pnpm --dir webserver dev
+```
+
+如果改端口，本地前端代理也需要同步改到相同端口，默认推荐还是释放 `3001`。
+
 ### better-sqlite3 构建失败
 
 ```bash
 pnpm -w approve-builds
 pnpm -w rebuild better-sqlite3
+```
+
+切换 Node 版本后如仍失败：
+
+```bash
+npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
 ```
 
 ### 登录返回 429

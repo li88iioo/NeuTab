@@ -1,5 +1,8 @@
 import fs from "fs"
 import path from "path"
+import { fileURLToPath } from "url"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function setIfMissing(key: string, value: string) {
   if (process.env[key] != null && process.env[key] !== "") return
@@ -34,16 +37,16 @@ function loadEnvFile(filePath: string): boolean {
   }
 }
 
-// Local dev convenience:
-// - running from webserver/: loads ./webserver/.env (cwd/.env)
-// - running from webserver/server/: loads ../.env
+// Local dev convenience: support starting from repo root, webserver/, or webserver/server/.
 const candidates = [
   path.join(process.cwd(), ".env"),
+  path.join(process.cwd(), "webserver", ".env"),
   path.resolve(process.cwd(), "..", ".env"),
-  path.resolve(process.cwd(), "../webserver/.env")
+  path.resolve(process.cwd(), "..", "webserver", ".env"),
+  path.resolve(__dirname, "..", "..", ".env"),
+  path.resolve(__dirname, "..", "..", "..", ".env")
 ]
 
 for (const p of candidates) {
   if (loadEnvFile(p)) break
 }
-

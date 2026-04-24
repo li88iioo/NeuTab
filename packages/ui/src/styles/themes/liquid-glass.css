@@ -317,15 +317,15 @@ body.liquid-glass.perf-interacting .search-modal-content {
 
 body.liquid-glass.perf-interacting .soft-out,
 body.liquid-glass.perf-interacting .app-card {
-  /* Avoid drastic luminance jumps during scroll: keep a translucent surface, just without blur. */
-  background: var(--glass-bg-hover) !important;
+  /* Keep surface luminance stable while scroll disables blur; icon-only SVGs flicker on mobile otherwise. */
+  background: var(--glass-bg) !important;
   box-shadow: var(--glass-shadow) !important;
 }
 
 body.liquid-glass.perf-interacting .soft-out:hover,
 body.liquid-glass.perf-interacting .app-card:hover {
   transform: none !important;
-  background: var(--glass-bg-hover) !important;
+  background: var(--glass-bg) !important;
   box-shadow: var(--glass-shadow) !important;
 }
 
@@ -1716,6 +1716,8 @@ body.liquid-glass .remote-favicon {
   border-radius: 10px;
   box-shadow: none;
   background: transparent;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 body.liquid-glass .favicon-wrapper,
