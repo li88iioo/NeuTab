@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { logger } from "@neutab/shared/utils/logger"
-import { cloudPull, cloudPush, readCloudSyncPrefs, writeCloudSyncStatus } from "~utils/cloudSync"
+import { SyncConflictError, cloudPull, cloudPush, readCloudSyncPrefs, writeCloudSyncStatus } from "~utils/cloudSync"
 import { DEFAULT_SETTINGS } from "@neutab/shared/utils/settings"
 import type { Language } from "@neutab/shared/utils/i18n"
 
@@ -111,6 +111,20 @@ export default function CloudSyncAgent() {
       const timestamp = new Date().toISOString()
       writeCloudSyncStatus({ action: "push", status: "success", timestamp })
     } catch (e) {
+      if (e instanceof SyncConflictError) {
+        // 其他设备推送过:先拉服务器最新数据,稍后再推(拉取会刷新版本基线)
+        logger.warn("[CloudSync] push conflict; pulling server data first")
+        syncingRef.current = false
+        try {
+          window.localStorage.removeItem(LAST_AUTO_PULL_AT_KEY)
+        } catch {
+          // ignore
+        }
+        await runPull()
+        pendingPushRef.current = true
+        schedulePush()
+        return
+      }
       logger.warn("[CloudSync] auto push failed:", e)
       const timestamp = new Date().toISOString()
       writeCloudSyncStatus({ action: "push", status: "failed", timestamp })

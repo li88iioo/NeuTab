@@ -92,9 +92,11 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
   }, [baseFaviconUrl, localIcon, customIcon, builtInIconUrl, effectiveStyle, hasLocalIcon])
 
   // 当输入变化（URL/图标来源变化）时，重置回退索引。
+  // 注意依赖 baseFaviconUrl 而非 faviconUrl:重试只改 revision(faviconUrl 变化),
+  // 若依赖 faviconUrl 会与重试 effect 互相触发形成反馈循环。
   useEffect(() => {
     setSrcIndex(0)
-  }, [name, url, customIcon, localIcon, builtInIconUrl, faviconUrl, effectiveStyle])
+  }, [name, url, customIcon, localIcon, builtInIconUrl, baseFaviconUrl, effectiveStyle])
 
   useEffect(() => {
     if (!shouldUseFaviconAutoRetry) return
@@ -105,6 +107,8 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
     const delay = Math.min(30_000, FAVICON_RETRY_BASE_MS * (2 ** faviconRetryCount))
     const timer = window.setTimeout(() => {
       setFaviconRevision((prev) => prev + 1)
+      // 显式重置回退索引,让 <img> 用带新 revision 的 URL 重试
+      setSrcIndex(0)
       setFaviconRetryCount((prev) => {
         const next = prev + 1
         if (next >= MAX_FAVICON_RETRIES && baseFaviconUrl) {

@@ -29,9 +29,19 @@ const JWT_SECRET: string = (() => {
     throw new Error('JWT_SECRET must be set in production')
   }
 
-  console.warn('[Auth] JWT_SECRET is not set; using an insecure development default secret')
-  return 'neutab-default-secret-change-in-production'
+  // 开发环境生成随机 secret(进程重启即失效),避免可预测的硬编码值被用来伪造 token
+  console.warn('[Auth] JWT_SECRET is not set; generated a random development secret (tokens invalidate on restart)')
+  return crypto.randomBytes(32).toString('base64')
 })()
+
+// 旧版扩展通过 X-Auth-Code 直接认证:该头是永不过期、无法吊销的万能密码,默认禁用。
+// 仅在需要兼容旧客户端时设置 ALLOW_LEGACY_AUTH_CODE=1 临时开启。
+const ALLOW_LEGACY_AUTH_CODE =
+  process.env.ALLOW_LEGACY_AUTH_CODE === '1' || process.env.ALLOW_LEGACY_AUTH_CODE === 'true'
+
+if (ALLOW_LEGACY_AUTH_CODE) {
+  console.warn('[Auth] ALLOW_LEGACY_AUTH_CODE is enabled; X-Auth-Code header auth is a deprecated, non-expiring credential path')
+}
 
 const timingSafeEqualString = (a: string, b: string): boolean => {
   const ab = Buffer.from(a)
@@ -61,15 +71,16 @@ const verifyJwtToken = (token: string | undefined): boolean => {
 }
 
 const hasValidAuthCode = (req: Request): boolean => {
+  if (!ALLOW_LEGACY_AUTH_CODE) return false
   const authCode = req.headers['x-auth-code']
   return Boolean(AUTH_CODE && typeof authCode === 'string' && timingSafeEqualString(authCode, AUTH_CODE))
 }
 
 /**
  * 验证请求是否已授权
- * 支持两种方式：
- * 1. Authorization: Bearer <jwt>
- * 2. X-Auth-Code: <auth_code>
+ * 1. Authorization: Bearer <jwt>(标准路径)
+ * 2. neutab_token httpOnly cookie(网页客户端)
+ * 3. X-Auth-Code header(已废弃,仅 ALLOW_LEGACY_AUTH_CODE=1 时可用)
  */
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // 方式1：JWT Bearer

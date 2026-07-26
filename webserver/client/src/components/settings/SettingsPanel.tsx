@@ -446,15 +446,13 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     const searchEngines = await storage.get("searchEngines")
     const currentEngine = await storage.get("currentEngine")
 
-    // 收集所有自定义图标数据（从服务器 API 获取）
+    // 收集所有自定义图标数据（从服务器 API 获取,认证靠同源 httpOnly cookie）
     const customIcons: Record<string, string> = {}
-    const token = localStorage.getItem('neutab_token')
-    const authHeader: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
     for (const group of safeGroups) {
       for (const app of group.apps) {
         if (app.hasLocalIcon) {
           try {
-            const res = await fetch(`/api/icons/${app.id}`, { headers: authHeader })
+            const res = await fetch(`/api/icons/${app.id}`)
             if (res.ok) {
               const blob = await res.blob()
               const base64 = await new Promise<string>((resolve) => {
@@ -560,11 +558,9 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
         await localExtStorage.set("quickLaunchGroups", groupsData)
       }
 
-      // 6) 恢复图标库（上传到服务器）
+      // 6) 恢复图标库（上传到服务器,认证靠同源 httpOnly cookie）
       if (customIcons) {
-        const token = localStorage.getItem('neutab_token')
-        const authHeader: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {}
-        const jsonHeaders: HeadersInit = { ...authHeader, 'Content-Type': 'application/json' }
+        const jsonHeaders: HeadersInit = { 'Content-Type': 'application/json' }
 
         for (const [appId, base64] of Object.entries(customIcons)) {
           try {
@@ -575,7 +571,7 @@ const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
             try {
               const res = await fetch(`/api/icons/uploadRaw/${encodeURIComponent(appId)}`, {
                 method: 'POST',
-                headers: { ...authHeader, 'Content-Type': mimeType },
+                headers: { 'Content-Type': mimeType },
                 body: converted.blob
               })
               if (!res.ok) throw new Error(`HTTP ${res.status}`)

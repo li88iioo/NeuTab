@@ -39,6 +39,15 @@ jobs:
       - name: Build packages
         run: pnpm build:packages
 
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
       - name: Build web client
         run: pnpm --filter neutab-web-client build
 

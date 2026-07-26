@@ -25,11 +25,8 @@ export class UnauthorizedError extends Error {
 }
 
 function dispatchLogout(reason = 'unauthorized') {
-  try {
-    localStorage.removeItem('neutab_token')
-  } catch {
-    // ignore
-  }
+  // 认证基于 httpOnly cookie,由服务端管理;这里只负责重置前端状态并通知服务端清除 cookie
+  void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
   initPromise = null
   try {
     window.dispatchEvent(new CustomEvent(AUTH_LOGOUT_EVENT, { detail: { reason } }))
@@ -71,10 +68,7 @@ function untrackKvKey(key: string) {
 }
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem('neutab_token')
-  if (token) {
-    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-  }
+  // 认证依赖同源 httpOnly cookie(浏览器自动携带),无需手动附加 token
   return { 'Content-Type': 'application/json' }
 }
 

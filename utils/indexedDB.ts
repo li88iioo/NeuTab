@@ -54,7 +54,10 @@ function getDeviceId(): string {
   if (deviceId) return deviceId
   deviceId = localStorage.getItem("neutab_device_id")
   if (!deviceId) {
-    deviceId = `device_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const uuid = typeof crypto?.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`
+    deviceId = `device_${uuid}`
     localStorage.setItem("neutab_device_id", deviceId)
   }
   return deviceId
@@ -156,7 +159,7 @@ export async function putGroups<T>(data: T): Promise<void> {
         reject(tx.error)
       }
       tx.onabort = () => {
-        dbInstance = null
+        handleTransactionError("putGroups abort", tx.error)
         reject(new Error("Transaction aborted"))
       }
     })
@@ -237,7 +240,7 @@ export async function putIcon(iconId: string, base64: string): Promise<void> {
         reject(tx.error)
       }
       tx.onabort = () => {
-        dbInstance = null
+        handleTransactionError("putIcon abort", tx.error)
         reject(new Error("Transaction aborted"))
       }
     })
@@ -293,7 +296,7 @@ export async function deleteIcon(iconId: string): Promise<void> {
         reject(tx.error)
       }
       tx.onabort = () => {
-        dbInstance = null
+        handleTransactionError("deleteIcon abort", tx.error)
         reject(new Error("Transaction aborted"))
       }
     })
@@ -305,28 +308,56 @@ export async function deleteIcon(iconId: string): Promise<void> {
 
 // 写入设置
 export async function putSetting<T>(key: string, value: T): Promise<void> {
-  const db = await openDB()
+  try {
+    const db = await openDB()
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_SETTINGS, "readwrite")
-    const store = tx.objectStore(STORE_SETTINGS)
-    const request = store.put({ key, value, timestamp: Date.now() })
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_SETTINGS, "readwrite")
+      const store = tx.objectStore(STORE_SETTINGS)
+      const request = store.put({ key, value, timestamp: Date.now() })
 
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
+      request.onsuccess = () => resolve()
+      request.onerror = () => {
+        handleTransactionError("putSetting request", request.error)
+        reject(request.error)
+      }
+      tx.onerror = () => {
+        handleTransactionError("putSetting transaction", tx.error)
+        reject(tx.error)
+      }
+      tx.onabort = () => {
+        handleTransactionError("putSetting abort", tx.error)
+        reject(new Error("Transaction aborted"))
+      }
+    })
+  } catch (error) {
+    console.error("[IndexedDB] putSetting failed:", error)
+    throw error
+  }
 }
 
 // 读取设置
 export async function getSetting<T>(key: string): Promise<T | null> {
-  const db = await openDB()
+  try {
+    const db = await openDB()
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_SETTINGS, "readonly")
-    const store = tx.objectStore(STORE_SETTINGS)
-    const request = store.get(key)
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_SETTINGS, "readonly")
+      const store = tx.objectStore(STORE_SETTINGS)
+      const request = store.get(key)
 
-    request.onsuccess = () => resolve(request.result?.value || null)
-    request.onerror = () => reject(request.error)
-  })
+      request.onsuccess = () => resolve(request.result?.value || null)
+      request.onerror = () => {
+        handleTransactionError("getSetting request", request.error)
+        reject(request.error)
+      }
+      tx.onerror = () => {
+        handleTransactionError("getSetting transaction", tx.error)
+        reject(tx.error)
+      }
+    })
+  } catch (error) {
+    console.error("[IndexedDB] getSetting failed:", error)
+    return null
+  }
 }

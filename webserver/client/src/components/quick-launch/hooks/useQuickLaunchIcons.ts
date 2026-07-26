@@ -5,29 +5,19 @@ import { ensurePngBlobFromDataUrl } from "@neutab/shared/utils/rasterizeSvg"
 import { blobToDataUrl } from "@neutab/shared/utils/importNormalization"
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem('neutab_token')
-  if (token) {
-    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-  }
+  // 认证依赖同源 httpOnly cookie,浏览器自动携带
   return { 'Content-Type': 'application/json' }
 }
 
 const saveLocalIcon = async (appId: string, base64: string) => {
   try {
-    const token = localStorage.getItem('neutab_token')
-
     const converted = await ensurePngBlobFromDataUrl(base64, 256)
     if (!converted.mimeType.startsWith("image/")) throw new Error("Invalid icon type")
 
     try {
       const res = await fetch(`/api/icons/uploadRaw/${encodeURIComponent(appId)}`, {
         method: 'POST',
-        headers: (() => {
-          const h = new Headers()
-          if (token) h.set('Authorization', `Bearer ${token}`)
-          h.set('Content-Type', converted.mimeType)
-          return h
-        })(),
+        headers: { 'Content-Type': converted.mimeType },
         body: converted.blob
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)

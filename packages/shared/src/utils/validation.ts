@@ -24,7 +24,8 @@ export const sanitizeUrl = (url: string): string => {
   try {
     // 检测是否已有scheme(协议头)
     // 使用正则而非startsWith("http")避免误伤httpbin.org等域名
-    const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)
+    // 冒号后紧跟端口数字(如 sub.domain.com:8080)不算协议头
+    const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:(?!\d+([/?#]|$))/.test(trimmed)
     const parsed = new URL(hasScheme ? trimmed : `https://${trimmed}`)
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
@@ -73,8 +74,8 @@ export const sanitizeInternalUrl = (url: string): string => {
   if (!trimmed) throw new Error("URL cannot be empty")
 
   try {
-    // 检测是否已有scheme(协议头)
-    const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)
+    // 检测是否已有scheme(协议头);冒号后紧跟端口数字不算协议头
+    const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:(?!\d+([/?#]|$))/.test(trimmed)
 
     // Allow "internal network" URLs as well (http/https), since this field is often
     // used as an intranet alternative endpoint.

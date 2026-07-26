@@ -8,36 +8,30 @@ interface AuthGateProps {
   language?: Language
 }
 
-function isTokenValid(token: string | null): boolean {
-  if (!token) return false
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return false
-
-    const base64UrlDecode = (input: string): string => {
-      const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
-      const padLen = (4 - (base64.length % 4)) % 4
-      const padded = base64 + '='.repeat(padLen)
-      return atob(padded)
-    }
-
-    const payload = JSON.parse(base64UrlDecode(parts[1]))
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      return false
-    }
-    return true
-  } catch {
-    return false
-  }
-}
-
 export default function AuthGate({ children, language = 'zh' }: AuthGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('neutab_token')
-    setIsAuthenticated(isTokenValid(token))
+    // token 在 httpOnly cookie 中,前端读不到;向服务端探测会话有效性。
+    // 迁移:清理旧版本落在 localStorage 的 token。
+    try {
+      localStorage.removeItem('neutab_token')
+    } catch {
+      // ignore
+    }
+    let cancelled = false
+    fetch('/api/auth/session')
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data) => {
+        if (!cancelled) setIsAuthenticated(Boolean(data?.authenticated))
+      })
+      .catch(() => {
+        if (!cancelled) setIsAuthenticated(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // 登录成功后从服务器加载数据

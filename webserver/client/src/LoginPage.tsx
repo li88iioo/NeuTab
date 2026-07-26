@@ -81,7 +81,7 @@ export default function LoginPage({ onSuccess, language = 'zh' }: LoginPageProps
       }
 
       if (data.token) {
-        localStorage.setItem('neutab_token', data.token)
+        // token 由服务端写入 httpOnly cookie;不落 localStorage,避免 XSS 可窃取
         setRetryAfterSeconds(0)
         onSuccess(data.token)
       }

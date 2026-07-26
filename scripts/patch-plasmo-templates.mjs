@@ -29,7 +29,7 @@ const patchFile = async (filePath, needle, insertAfter, insertion) => {
   if (idx === -1) {
     // Upstream Plasmo templates can change; keep this script best-effort to avoid breaking installs.
     const msg = `Could not find insertion point in ${filePath}`
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.CI) {
       console.error(`[patch-plasmo-templates] ERROR: ${msg}`)
       console.error(`  This may indicate a Plasmo template change. Please review the patch logic.`)
       throw new Error(msg)
@@ -71,7 +71,7 @@ const ensureEarlyRestoreScript = async (filePath) => {
   const idx = raw.indexOf(insertAfter)
   if (idx === -1) {
     const msg = `Could not find <head> in ${filePath}`
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.CI) {
       console.error(`[patch-plasmo-templates] ERROR: ${msg}`)
       throw new Error(msg)
     }

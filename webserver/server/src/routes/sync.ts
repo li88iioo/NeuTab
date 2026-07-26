@@ -6,12 +6,21 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express'
 import crypto from 'crypto'
 import fs from 'fs'
-import { db, iconCountByFilename, kvGetAll, kvRemove, kvSet, iconGet, iconGetAll, iconSet, getIconPath } from '../db.js'
+import { db, iconCountByFilename, kvGet, kvGetAll, kvRemove, kvSet, iconGet, iconGetAll, iconRemove, iconSet, getIconPath } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router: ExpressRouter = Router()
 
 router.use(authMiddleware)
+
+// 服务器端数据版本标记。key 以下划线开头,不匹配 SYNC_KEY_RE,
+// 因此不会出现在 pull 的 settings 中,也不会被 push 覆盖/删除。
+const SYNC_META_KEY = '_sync_updated_at'
+
+const readServerUpdatedAt = (): string => {
+  const v = kvGet(SYNC_META_KEY)
+  return typeof v === 'string' ? v : ''
+}
 
 const SAFE_ICON_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
 const EXT_TO_MIME: Record<string, string> = {
@@ -133,6 +142,7 @@ router.get('/pull', (req: Request, res: Response) => {
     if (!wantsV1 && !wantsV2) {
       return res.json({
         version: 3,
+        updatedAt: readServerUpdatedAt(),
         data: {
           settings: data,
           iconIds: icons.map((i) => i.id)
@@ -211,6 +221,19 @@ router.post('/push', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid payload' })
     }
 
+    // 冲突检测(乐观锁):客户端携带其最后一次见到的服务器版本号。
+    // 若与当前版本不一致,说明有其他设备在此期间推送过 → 拒绝并让客户端先 pull 合并。
+    // 旧客户端不带 baseUpdatedAt 时跳过检测(保持向后兼容,行为退化为 last-write-wins)。
+    const baseUpdatedAt = typeof payload?.baseUpdatedAt === 'string' ? payload.baseUpdatedAt : null
+    const serverUpdatedAt = readServerUpdatedAt()
+    if (baseUpdatedAt !== null && serverUpdatedAt && baseUpdatedAt !== serverUpdatedAt) {
+      return res.status(409).json({
+        error: 'Server data changed since last pull',
+        code: 'SYNC_CONFLICT',
+        serverUpdatedAt
+      })
+    }
+
     const incomingCustomIcons = (() => {
       if (version === 3) return null
       if (version === 2) return (dataContainer as any)?.customIcons
@@ -276,6 +299,16 @@ router.post('/push', (req: Request, res: Response) => {
 
     const createdFiles = new Set<string>()
 
+    // v3 客户端可携带 iconManifest(当前有效图标 id 全集),用于清理服务端孤儿图标。
+    const iconManifest: Set<string> | null = (() => {
+      const raw = (payload as Record<string, unknown>)?.iconManifest
+      if (!Array.isArray(raw)) return null
+      const ids = raw.filter((v): v is string => typeof v === 'string' && SAFE_ICON_ID_RE.test(v))
+      return new Set(ids)
+    })()
+
+    const nextUpdatedAt = new Date().toISOString()
+
     try {
       for (const op of iconOps) {
         const targetPath = getIconPath(op.filename)
@@ -283,6 +316,11 @@ router.post('/push', (req: Request, res: Response) => {
           createdFiles.add(targetPath)
         }
       }
+
+      // 收集将被清单剔除的图标(需在事务外删文件,事务内删记录)
+      const orphanedIcons = iconManifest
+        ? iconGetAll().filter((icon) => !iconManifest.has(icon.id))
+        : []
 
       // Commit DB changes in a single transaction.
       const tx = db.transaction(() => {
@@ -298,6 +336,10 @@ router.post('/push', (req: Request, res: Response) => {
         for (const op of iconOps) {
           iconSet(op.id, op.filename, op.mimeType, op.sizeBytes, op.hash)
         }
+        for (const icon of orphanedIcons) {
+          iconRemove(icon.id)
+        }
+        kvSet(SYNC_META_KEY, nextUpdatedAt)
       })
       tx()
 
@@ -306,6 +348,15 @@ router.post('/push', (req: Request, res: Response) => {
         if (op.oldFilename && op.oldFilename !== op.filename && iconCountByFilename(op.oldFilename) === 0) {
           try {
             fs.unlinkSync(getIconPath(op.oldFilename))
+          } catch {
+            // ignore
+          }
+        }
+      }
+      for (const icon of orphanedIcons) {
+        if (iconCountByFilename(icon.filename) === 0) {
+          try {
+            fs.unlinkSync(getIconPath(icon.filename))
           } catch {
             // ignore
           }
@@ -322,7 +373,7 @@ router.post('/push', (req: Request, res: Response) => {
       throw e
     }
 
-    res.json({ success: true })
+    res.json({ success: true, updatedAt: nextUpdatedAt })
   } catch (e) {
     console.error('Failed to push data:', e)
     res.status(500).json({ error: 'Failed to push data' })
