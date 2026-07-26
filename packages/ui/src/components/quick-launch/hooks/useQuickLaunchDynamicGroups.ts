@@ -3,6 +3,7 @@ import type { QuickLaunchApp, QuickLaunchGroup } from "@neutab/shared/types/quic
 import { logger } from "@neutab/shared/utils/logger"
 import { ensureChromePermission } from "@neutab/shared/utils/permissions"
 import { RECENT_ID, TOP_SITES_ID } from "@neutab/shared/constants/quickLaunchStorage"
+import { getChromeApi } from "@neutab/shared/types/chrome"
 
 interface DynamicGroupLabels {
   frequentlyVisited: string
@@ -25,7 +26,7 @@ export const useQuickLaunchDynamicGroups = (
       return
     }
 
-    const chromeApi = (globalThis as any).chrome as any | undefined
+    const chromeApi = getChromeApi()
 
     const setTopSitesSafe = (group: QuickLaunchGroup | null) => {
       if (isActive) setTopSitesGroup(group)
@@ -44,7 +45,7 @@ export const useQuickLaunchDynamicGroups = (
         return
       }
 
-      chromeApi.history.search({ text: "", maxResults: 200 }, (items: any[]) => {
+      chromeApi.history.search({ text: "", maxResults: 200 }, (items) => {
         if (!isActive) return
         if (chromeApi.runtime?.lastError) {
           logger.warn("[topSites:fallback:history] Failed:", chromeApi.runtime.lastError.message)
@@ -53,7 +54,7 @@ export const useQuickLaunchDynamicGroups = (
         }
 
         const apps: QuickLaunchApp[] = items
-          .filter((i: any) => {
+          .filter((i) => {
             if (!i.url) return false
             try {
               const u = new URL(i.url)
@@ -62,16 +63,16 @@ export const useQuickLaunchDynamicGroups = (
               return false
             }
           })
-          .sort((a: any, b: any) => {
-            const av = (a as any).visitCount ?? 0
-            const bv = (b as any).visitCount ?? 0
+          .sort((a, b) => {
+            const av = a.visitCount ?? 0
+            const bv = b.visitCount ?? 0
             if (bv !== av) return bv - av
             const at = a.lastVisitTime ?? 0
             const bt = b.lastVisitTime ?? 0
             return bt - at
           })
           .slice(0, 14)
-          .map((item: any) => ({
+          .map((item) => ({
             id: `top_${item.url}`,
             name: item.title || labels.newTab,
             url: item.url!,
@@ -92,7 +93,7 @@ export const useQuickLaunchDynamicGroups = (
           return
         }
 
-        chromeApi.topSites.get((sites: any[]) => {
+        chromeApi.topSites.get((sites) => {
           if (!isActive) return
           if (chromeApi.runtime?.lastError) {
             logger.warn("[topSites] Failed:", chromeApi.runtime.lastError.message)
@@ -100,7 +101,7 @@ export const useQuickLaunchDynamicGroups = (
             return
           }
 
-          const apps: QuickLaunchApp[] = sites.slice(0, 14).map((site: any) => ({
+          const apps: QuickLaunchApp[] = sites.slice(0, 14).map((site) => ({
             id: `top_${site.url}`,
             name: site.title,
             url: site.url,
@@ -133,7 +134,7 @@ export const useQuickLaunchDynamicGroups = (
       return
     }
 
-    const chromeApi = (globalThis as any).chrome as any | undefined
+    const chromeApi = getChromeApi()
 
     const setRecentSafe = (group: QuickLaunchGroup | null) => {
       if (isActive) setRecentGroup(group)
@@ -152,7 +153,7 @@ export const useQuickLaunchDynamicGroups = (
         return
       }
 
-      chromeApi.history.search({ text: "", maxResults: 14 }, (items: any[]) => {
+      chromeApi.history.search({ text: "", maxResults: 14 }, (items) => {
         if (!isActive) return
         if (chromeApi.runtime?.lastError) {
           logger.warn("[history] Failed:", chromeApi.runtime.lastError.message)
@@ -160,7 +161,7 @@ export const useQuickLaunchDynamicGroups = (
           return
         }
 
-        const apps: QuickLaunchApp[] = items.filter((i: any) => i.url).map((item: any) => ({
+        const apps: QuickLaunchApp[] = items.filter((i) => i.url).map((item) => ({
           id: `hist_${item.id}`,
           name: item.title || labels.newTab,
           url: item.url!,

@@ -58,7 +58,7 @@ const estimateSyncItemBytes = (key: string, value: unknown): number => {
 const getSyncQuotaBytesPerItem = (): number => {
   try {
     // 尽量读取运行时常量（Chromium 支持），读不到就用兜底默认值。
-    const q = (globalThis as any)?.chrome?.storage?.sync?.QUOTA_BYTES_PER_ITEM
+    const q = (globalThis as { chrome?: typeof chrome })?.chrome?.storage?.sync?.QUOTA_BYTES_PER_ITEM
     if (typeof q === "number" && Number.isFinite(q) && q > 0) return q
   } catch {
     // ignore
@@ -81,7 +81,7 @@ const makeChunkKey = (key: string, index: number, rev?: string) => {
 }
 
 const getMeta = async (storage: Storage, key: string): Promise<ChunkMeta | null> => {
-  const raw = await storage.get<any>(key)
+  const raw = await storage.get<ChunkMeta | null>(key)
   if (!raw) return null
   // 兼容旧格式：老版本可能直接存数组/对象，没有 meta 字段。
   if (raw.__chunked === undefined && raw.__compressed === undefined) return raw as ChunkMeta

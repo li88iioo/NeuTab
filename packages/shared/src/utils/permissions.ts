@@ -1,4 +1,5 @@
 import { logger } from "./logger"
+import type { ChromeLike } from "../types/chrome"
 
 /**
  * 检查 Chrome 扩展权限是否已授予
@@ -12,16 +13,17 @@ import { logger } from "./logger"
  * }
  */
 export const ensureChromePermission = (
-  chromeApi: any,
+  chromeApi: ChromeLike | undefined,
   permission: string
 ): Promise<boolean> => {
-  if (!chromeApi?.permissions?.contains) {
+  const permissionsApi = chromeApi?.permissions
+  if (!permissionsApi?.contains) {
     return Promise.resolve(true)
   }
 
   return new Promise((resolve) => {
-    chromeApi.permissions.contains({ permissions: [permission] }, (granted: boolean) => {
-      if (chromeApi.runtime?.lastError) {
+    permissionsApi.contains({ permissions: [permission] }, (granted: boolean) => {
+      if (chromeApi?.runtime?.lastError) {
         logger.warn(`[permissions] Failed to check ${permission}:`, chromeApi.runtime.lastError.message)
         resolve(false)
         return

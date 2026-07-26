@@ -285,10 +285,10 @@ export function writeCloudSyncStatus(next: CloudSyncStatus): void {
 
 export function readCloudSyncStatus(): { lastSyncTime: string; lastSyncStatus: "success" | "failed" | "" } {
   const lastSyncTime = String(window.localStorage.getItem(LAST_SYNC_TIME_KEY) || "")
-  const lastSyncStatus = String(window.localStorage.getItem(LAST_SYNC_STATUS_KEY) || "") as any
+  const raw = String(window.localStorage.getItem(LAST_SYNC_STATUS_KEY) || "")
   return {
     lastSyncTime,
-    lastSyncStatus: lastSyncStatus === "success" || lastSyncStatus === "failed" ? lastSyncStatus : ""
+    lastSyncStatus: raw === "success" || raw === "failed" ? raw : ""
   }
 }
 
@@ -342,7 +342,7 @@ export async function buildBackupPayload(language: Language): Promise<{
   exportedAt: string
   data: { settings: Record<string, unknown>; customIcons: Record<string, string> }
 }> {
-  const baseSettings = (await SETTINGS_STORAGE.getMany(Object.keys(DEFAULT_SETTINGS))) as Record<string, any>
+  const baseSettings = (await SETTINGS_STORAGE.getMany(Object.keys(DEFAULT_SETTINGS))) as Record<string, unknown>
   const searchEngines = await SETTINGS_STORAGE.get("searchEngines")
   const currentEngine = await SETTINGS_STORAGE.get("currentEngine")
   const openInNewWindow = await SETTINGS_STORAGE.get("searchOpenInNewWindow")

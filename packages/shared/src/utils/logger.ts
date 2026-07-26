@@ -1,13 +1,13 @@
 const isDev = (() => {
   try {
-    const env = (import.meta as any)?.env
+    const env = (import.meta as { env?: { DEV?: boolean } })?.env
     if (env && typeof env.DEV === "boolean") return env.DEV
   } catch {
     // ignore
   }
 
   try {
-    const p = (globalThis as any).process
+    const p = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process
     const nodeEnv = p?.env?.NODE_ENV
     if (typeof nodeEnv === "string") return nodeEnv !== "production"
   } catch {
@@ -18,7 +18,7 @@ const isDev = (() => {
 })()
 
 export const logger = {
-  debug: (...args: any[]) => isDev && console.log("[Debug]", ...args),
-  warn: (...args: any[]) => console.warn("[Warn]", ...args),
-  error: (...args: any[]) => console.error("[Error]", ...args)
+  debug: (...args: unknown[]) => isDev && console.log("[Debug]", ...args),
+  warn: (...args: unknown[]) => console.warn("[Warn]", ...args),
+  error: (...args: unknown[]) => console.error("[Error]", ...args)
 }

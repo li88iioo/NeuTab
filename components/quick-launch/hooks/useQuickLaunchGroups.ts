@@ -214,8 +214,9 @@ export const useQuickLaunchGroups = (language: Language | undefined) => {
         }
       }
 
-      if ("scheduler" in window && typeof (window as Window & { scheduler?: { postTask: (fn: () => void, opts: any) => void } }).scheduler?.postTask === "function") {
-        ;(window as any).scheduler.postTask(runSync, { priority: "background" })
+      const schedulerWindow = window as Window & { scheduler?: { postTask: (fn: () => void, opts: { priority: string }) => void } }
+      if (typeof schedulerWindow.scheduler?.postTask === "function") {
+        schedulerWindow.scheduler.postTask(runSync, { priority: "background" })
         return
       }
 

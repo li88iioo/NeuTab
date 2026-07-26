@@ -21,7 +21,7 @@ export const normalizeGroups = (raw: unknown, language: Language = "zh"): QuickL
     const appsRaw = Array.isArray(typed.apps) ? typed.apps : []
     const apps = appsRaw
       .map((app, appIndex) => {
-        const a = app as any
+        const a = app as unknown as Record<string, unknown>
         const id = String(a?.id ?? `${Date.now()}-${index}-${appIndex}`)
         const name = sanitizeName(String(a?.name ?? ""))
         const color = sanitizeHexColor(String(a?.color ?? "#6c5ce7"))
@@ -49,7 +49,7 @@ export const normalizeGroups = (raw: unknown, language: Language = "zh"): QuickL
         if (!url && !internalUrl) return null
 
         const iconStyleRaw = String(a?.iconStyle ?? "image")
-        const iconStyle = iconStyleRaw === "text" ? "text" : "image"
+        const iconStyle: "text" | "image" = iconStyleRaw === "text" ? "text" : "image"
         const customText = typeof a?.customText === "string" ? a.customText.slice(0, 2) : undefined
 
         const customIcon = (() => {
@@ -75,7 +75,7 @@ export const normalizeGroups = (raw: unknown, language: Language = "zh"): QuickL
           localIcon: undefined
         }
       })
-      .filter(Boolean) as any[]
+      .filter((app): app is NonNullable<typeof app> => app !== null)
 
     // 如果 typed.name 是字符串（包括空字符串），保留它；否则生成默认名称
     const groupName = typeof typed.name === 'string'
@@ -95,7 +95,7 @@ export const normalizeEngines = (raw: unknown): { id: string; name: string; url:
 
   const list = raw
     .map((e, i) => {
-      const obj = e as any
+      const obj = e as Record<string, unknown>
       const id = String(obj?.id ?? `custom_${Date.now()}_${i}`)
       const name = sanitizeName(String(obj?.name ?? ""))
       const urlRaw = String(obj?.url ?? "").trim()

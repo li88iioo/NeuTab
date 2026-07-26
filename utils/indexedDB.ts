@@ -21,7 +21,7 @@ let lastHealthCheckAt = 0
 const HEALTH_CHECK_CACHE_MS = 5000
 
 // 错误处理辅助函数
-function handleTransactionError(operation: string, error: any): void {
+function handleTransactionError(operation: string, error: unknown): void {
   dbInstance = null
   lastHealthCheckAt = 0
   console.error(`[IndexedDB] ${operation} failed:`, error)

@@ -239,7 +239,7 @@ export default function QuickLaunch({
     if (urls.size === 0) return
 
     let cancelled = false
-    const w = window as any
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void }
 
     const kickoff = () => {
       void (async () => {

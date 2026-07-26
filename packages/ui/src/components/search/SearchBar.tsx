@@ -23,6 +23,7 @@ import { getBrowserFaviconUrl } from "@neutab/shared/utils/favicon"
 import { logger } from "@neutab/shared/utils/logger"
 import { pulsePerfInteracting } from "@neutab/shared/utils/perfLod"
 import { ensureChromePermission } from "@neutab/shared/utils/permissions"
+import { getChromeApi, type ChromeBookmarkNode } from "@neutab/shared/types/chrome"
 import type { QuickLaunchGroup, QuickLaunchApp } from "@neutab/shared/types/quickLaunch"
 import { navigateCurrentTab } from "@neutab/shared/utils/navigation"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
@@ -327,12 +328,12 @@ const SearchBarInner = () => {
     }
 
     // 2. 调用 Chrome API 过滤浏览器书签 (支持防抖)
-    const chromeApi = (globalThis as any).chrome
+    const chromeApi = getChromeApi()
     if (chromeApi?.bookmarks?.search) {
       const requestId = ++searchRequestRef.current
       const timer = setTimeout(() => {
         const runSearch = () => {
-          chromeApi.bookmarks.search(query, (results: any[]) => {
+          chromeApi.bookmarks!.search(query, (results: ChromeBookmarkNode[]) => {
             // 仅处理最新的请求结果，防止竞态条件
             if (searchRequestRef.current !== requestId) return
             if (chromeApi.runtime?.lastError) {

@@ -1,3 +1,5 @@
+import { getChromeApi } from "../types/chrome"
+
 /**
  * @file favicon.ts
  * @description 统一 Extension / Web 的 favicon 获取策略。
@@ -93,7 +95,7 @@ export const getBrowserFaviconUrl = (pageUrl: string, size = 64): string | null 
   if (!isHttp) return null
 
   // Extension (Chromium): 利用浏览器内置服务获取图标
-  const chromeApi = (globalThis as any).chrome
+  const chromeApi = getChromeApi()
   if (!isFirefox() && chromeApi?.runtime?.getURL) {
     // _favicon 是 Chromium 内置节点，直接返回拼接后的扩展路径
     // 注意：必须传入“完整 URL”（含协议）。用户可能输入的是 "github.com" 这类无协议地址。

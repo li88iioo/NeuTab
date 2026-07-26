@@ -78,13 +78,13 @@ export const applyThemeClasses = (
     // Calling `applyThemeClasses()` multiple times during boot (restoreTheme/preloadTheme/React effect)
     // should NOT temporarily remove shadows, otherwise the SearchBar `.soft-in` shadow "flashes".
     const nextKey = `${mode}|${theme}|${isDark ? "1" : "0"}`
-    const prevKey = (globalThis as any).__NEUTAB_THEME_KEY__ as string | undefined
+    const prevKey = (globalThis as { __NEUTAB_THEME_KEY__?: string }).__NEUTAB_THEME_KEY__
     const isBooting = document.body.classList.contains("no-transition")
 
     if (!isBooting && prevKey && prevKey !== nextKey) {
         markThemeSwitching()
     }
-    ;(globalThis as any).__NEUTAB_THEME_KEY__ = nextKey
+    ;(globalThis as { __NEUTAB_THEME_KEY__?: string }).__NEUTAB_THEME_KEY__ = nextKey
 
     // 应用深色模式 Class
     if (isDark) {

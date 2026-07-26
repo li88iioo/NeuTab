@@ -43,7 +43,7 @@ export const preloadTheme = async () => {
 			"cardSize",
 			"showSearchBar",
 			"showClock"
-		]) as Record<string, any>
+		]) as Record<string, unknown>
 
 		const visualTheme = values.visualTheme as VisualTheme | undefined
 		const themeMode = values.themeMode as ThemeMode | undefined
