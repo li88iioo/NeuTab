@@ -10,6 +10,7 @@ import { DEFAULT_SETTINGS, LAYOUT_LIMITS, clampNumber, type ThemeMode, type Visu
 import { blobToDataUrl, normalizeGroups } from "@neutab/shared/utils/importNormalization"
 import { normalizeBackupImport } from "@neutab/shared/utils/backup"
 import { GROUPS_KEY, localExtStorage, localImageExtStorage, syncStorage } from "~components/quick-launch/quickLaunchStorage"
+import { commitLayoutCache, commitThemeCache } from "~utils/uiCache"
 
 export type CloudSyncPrefs = {
   syncEnabled: boolean
@@ -288,23 +289,6 @@ export function readCloudSyncStatus(): { lastSyncTime: string; lastSyncStatus: "
   return {
     lastSyncTime,
     lastSyncStatus: lastSyncStatus === "success" || lastSyncStatus === "failed" ? lastSyncStatus : ""
-  }
-}
-
-const commitThemeCache = (nextMode: ThemeMode | undefined, nextVisual: VisualTheme | undefined) => {
-  try {
-    window.localStorage.setItem("theme_mode_cache", nextMode || "auto")
-    window.localStorage.setItem("visual_theme_cache", nextVisual || "neumorphic")
-  } catch {
-    // ignore
-  }
-}
-
-const commitLayoutCache = (key: string, value: unknown) => {
-  try {
-    window.localStorage.setItem(key, String(value))
-  } catch {
-    // ignore
   }
 }
 
