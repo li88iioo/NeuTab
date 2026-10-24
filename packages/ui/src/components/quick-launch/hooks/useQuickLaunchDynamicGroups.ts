@@ -21,10 +21,7 @@ export const useQuickLaunchDynamicGroups = (
 
   useEffect(() => {
     let isActive = true
-    if (!showTopSites) {
-      setTopSitesGroup(null)
-      return
-    }
+    if (!showTopSites) return
 
     const chromeApi = getChromeApi()
 
@@ -129,10 +126,7 @@ export const useQuickLaunchDynamicGroups = (
 
   useEffect(() => {
     let isActive = true
-    if (!showRecentHistory) {
-      setRecentGroup(null)
-      return
-    }
+    if (!showRecentHistory) return
 
     const chromeApi = getChromeApi()
 
@@ -179,5 +173,9 @@ export const useQuickLaunchDynamicGroups = (
     }
   }, [showRecentHistory, labels.recentlyVisited, labels.newTab])
 
-  return { topSitesGroup, recentGroup }
+  // 隐藏分组由设置直接决定；保留上次结果，重新启用并刷新时不闪空。
+  return {
+    topSitesGroup: showTopSites ? topSitesGroup : null,
+    recentGroup: showRecentHistory ? recentGroup : null
+  }
 }

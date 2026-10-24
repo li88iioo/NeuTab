@@ -142,10 +142,14 @@ const main = async () => {
 
   // 1. 修改 Plasmo 源码中的基础模板。
   // 这样做可以确保后续所有生成的临时页面都自带这些增强配置。
-  const template = "node_modules/plasmo/templates/static/react18/index.html"
-  let changedTemplate = await ensureEarlyRestoreScript(template)
-  changedTemplate ||= await ensureEarlyFallbackStyle(template, fallbackStyle, insertAfter)
-  changedTemplate ||= await patchViewportFitCover(template)
+  let changedTemplate = false
+  for (const version of ["react18", "react19"]) {
+    const template = `node_modules/plasmo/templates/static/${version}/index.html`
+    const scriptChanged = await ensureEarlyRestoreScript(template)
+    const styleChanged = await ensureEarlyFallbackStyle(template, fallbackStyle, insertAfter)
+    const viewportChanged = await patchViewportFitCover(template)
+    changedTemplate = scriptChanged || styleChanged || viewportChanged || changedTemplate
+  }
 
   // 2. 修改当前已生成的 .plasmo 临时页面。
   // 确保开发者在不重新安装依赖的情况下，立即看到本地开发效果。
@@ -158,10 +162,10 @@ const main = async () => {
   ]
   let changedPlasmo = false
   for (const p of plasmoPages) {
-    let changed = await ensureEarlyRestoreScript(p)
-    changed ||= await ensureEarlyFallbackStyle(p, fallbackStyle, insertAfter)
-    changed ||= await patchViewportFitCover(p)
-    changedPlasmo ||= changed
+    const scriptChanged = await ensureEarlyRestoreScript(p)
+    const styleChanged = await ensureEarlyFallbackStyle(p, fallbackStyle, insertAfter)
+    const viewportChanged = await patchViewportFitCover(p)
+    changedPlasmo = scriptChanged || styleChanged || viewportChanged || changedPlasmo
   }
 
   if (changedTemplate || changedPlasmo) {

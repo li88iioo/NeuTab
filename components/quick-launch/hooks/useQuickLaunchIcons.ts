@@ -98,7 +98,7 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
     } catch {
       return undefined
     }
-  }, [])
+  }, [updateIconCache])
 
   useEffect(() => {
     if (isGroupsLoading || !groups?.length) {
@@ -170,7 +170,7 @@ export const useQuickLaunchIcons = ({ groups, isGroupsLoading, setGroups }: Quic
 
     loadIcons()
     return () => { active = false }
-  }, [groups, iconStorageRevision, isGroupsLoading, updateIconCache])
+  }, [groups, iconStorageRevision, isGroupsLoading, setGroups, updateIconCache])
 
   return {
     iconCache,

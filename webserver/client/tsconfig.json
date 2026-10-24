@@ -26,8 +26,7 @@
       "@neutab/ui/*": ["../../packages/ui/src/*"],
       "@plasmohq/storage": ["./src/shims/storage.ts"],
       "@plasmohq/storage/hook": ["./src/shims/storage.ts"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": ["src"]
 }

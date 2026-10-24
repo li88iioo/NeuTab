@@ -39,102 +39,102 @@ export default function CloudSyncAgent() {
   const uploadIconsNextPushRef = useRef(true)
   const lastPrefsKeyRef = useRef("")
 
-  const schedulePush = (delayMs = PUSH_DEBOUNCE_MS) => {
-    void (async () => {
+  useEffect(() => {
+    const schedulePush = (delayMs = PUSH_DEBOUNCE_MS) => {
+      void (async () => {
+        const prefs = await readCloudSyncPrefs()
+        if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
+
+        pendingPushRef.current = true
+        if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+        const suppressDelay = Math.max(0, suppressPushUntilRef.current - Date.now())
+        pushTimerRef.current = setTimeout(() => {
+          void runPush()
+        }, Math.max(delayMs, suppressDelay))
+      })()
+    }
+
+    const runPull = async () => {
       const prefs = await readCloudSyncPrefs()
       if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
+      if (syncingRef.current) return
 
-      pendingPushRef.current = true
-      if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
-      const suppressDelay = Math.max(0, suppressPushUntilRef.current - Date.now())
-      pushTimerRef.current = setTimeout(() => {
-        void runPush()
-      }, Math.max(delayMs, suppressDelay))
-    })()
-  }
-
-  const runPull = async () => {
-    const prefs = await readCloudSyncPrefs()
-    if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
-    if (syncingRef.current) return
-
-    try {
-      const last = Number(window.localStorage.getItem(LAST_AUTO_PULL_AT_KEY) || "0")
-      if (Number.isFinite(last) && last > 0 && Date.now() - last < AUTO_PULL_COOLDOWN_MS) {
-        return
-      }
-      window.localStorage.setItem(LAST_AUTO_PULL_AT_KEY, String(Date.now()))
-    } catch {
-      // ignore
-    }
-
-    syncingRef.current = true
-    try {
-      const language = readLanguage()
-      await cloudPull(prefs.serverUrl, prefs.authCode, language)
-      suppressPushUntilRef.current = Date.now() + SUPPRESS_PUSH_AFTER_PULL_MS
-      // After a pull, we don't know if the server already has all local icons; upload once on next push.
-      uploadIconsNextPushRef.current = true
-      const timestamp = new Date().toISOString()
-      writeCloudSyncStatus({ action: "pull", status: "success", timestamp })
-    } catch (e) {
-      logger.warn("[CloudSync] auto pull failed:", e)
-      const timestamp = new Date().toISOString()
-      writeCloudSyncStatus({ action: "pull", status: "failed", timestamp })
-    } finally {
-      syncingRef.current = false
-    }
-  }
-
-  const runPush = async () => {
-    const prefs = await readCloudSyncPrefs()
-    if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
-    if (syncingRef.current) {
-      schedulePush()
-      return
-    }
-    const suppressDelay = suppressPushUntilRef.current - Date.now()
-    if (suppressDelay > 0) {
-      schedulePush(suppressDelay)
-      return
-    }
-
-    if (!pendingPushRef.current) return
-    pendingPushRef.current = false
-
-    syncingRef.current = true
-    try {
-      const language = readLanguage()
-      const uploadIcons = uploadIconsNextPushRef.current
-      uploadIconsNextPushRef.current = false
-      await cloudPush(prefs.serverUrl, prefs.authCode, language, { uploadIcons })
-      const timestamp = new Date().toISOString()
-      writeCloudSyncStatus({ action: "push", status: "success", timestamp })
-    } catch (e) {
-      if (e instanceof SyncConflictError) {
-        // 其他设备推送过:先拉服务器最新数据,稍后再推(拉取会刷新版本基线)
-        logger.warn("[CloudSync] push conflict; pulling server data first")
-        syncingRef.current = false
-        try {
-          window.localStorage.removeItem(LAST_AUTO_PULL_AT_KEY)
-        } catch {
-          // ignore
+      try {
+        const last = Number(window.localStorage.getItem(LAST_AUTO_PULL_AT_KEY) || "0")
+        if (Number.isFinite(last) && last > 0 && Date.now() - last < AUTO_PULL_COOLDOWN_MS) {
+          return
         }
-        await runPull()
-        pendingPushRef.current = true
+        window.localStorage.setItem(LAST_AUTO_PULL_AT_KEY, String(Date.now()))
+      } catch {
+        // ignore
+      }
+
+      syncingRef.current = true
+      try {
+        const language = readLanguage()
+        await cloudPull(prefs.serverUrl, prefs.authCode, language)
+        suppressPushUntilRef.current = Date.now() + SUPPRESS_PUSH_AFTER_PULL_MS
+        // After a pull, we don't know if the server already has all local icons; upload once on next push.
+        uploadIconsNextPushRef.current = true
+        const timestamp = new Date().toISOString()
+        writeCloudSyncStatus({ action: "pull", status: "success", timestamp })
+      } catch (e) {
+        logger.warn("[CloudSync] auto pull failed:", e)
+        const timestamp = new Date().toISOString()
+        writeCloudSyncStatus({ action: "pull", status: "failed", timestamp })
+      } finally {
+        syncingRef.current = false
+      }
+    }
+
+    const runPush = async () => {
+      const prefs = await readCloudSyncPrefs()
+      if (!prefs.syncEnabled || !prefs.autoSyncEnabled || !prefs.serverUrl || !prefs.authCode) return
+      if (syncingRef.current) {
         schedulePush()
         return
       }
-      logger.warn("[CloudSync] auto push failed:", e)
-      const timestamp = new Date().toISOString()
-      writeCloudSyncStatus({ action: "push", status: "failed", timestamp })
-    } finally {
-      syncingRef.current = false
-      if (pendingPushRef.current) schedulePush()
-    }
-  }
+      const suppressDelay = suppressPushUntilRef.current - Date.now()
+      if (suppressDelay > 0) {
+        schedulePush(suppressDelay)
+        return
+      }
 
-  useEffect(() => {
+      if (!pendingPushRef.current) return
+      pendingPushRef.current = false
+
+      syncingRef.current = true
+      try {
+        const language = readLanguage()
+        const uploadIcons = uploadIconsNextPushRef.current
+        uploadIconsNextPushRef.current = false
+        await cloudPush(prefs.serverUrl, prefs.authCode, language, { uploadIcons })
+        const timestamp = new Date().toISOString()
+        writeCloudSyncStatus({ action: "push", status: "success", timestamp })
+      } catch (e) {
+        if (e instanceof SyncConflictError) {
+          // 其他设备推送过:先拉服务器最新数据,稍后再推(拉取会刷新版本基线)
+          logger.warn("[CloudSync] push conflict; pulling server data first")
+          syncingRef.current = false
+          try {
+            window.localStorage.removeItem(LAST_AUTO_PULL_AT_KEY)
+          } catch {
+            // ignore
+          }
+          await runPull()
+          pendingPushRef.current = true
+          schedulePush()
+          return
+        }
+        logger.warn("[CloudSync] auto push failed:", e)
+        const timestamp = new Date().toISOString()
+        writeCloudSyncStatus({ action: "push", status: "failed", timestamp })
+      } finally {
+        syncingRef.current = false
+        if (pendingPushRef.current) schedulePush()
+      }
+    }
+
     // Trigger auto pull when prefs turn on (polling, because prefs live in localStorage).
     const poll = () => {
       void (async () => {
@@ -199,7 +199,6 @@ export default function CloudSyncAgent() {
         // ignore
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return null

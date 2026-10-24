@@ -90,7 +90,7 @@ function writeBlobIfMissing(targetPath: string, buffer: Buffer): boolean {
 
 // POST /upload - 上传图标
 router.post('/upload', authMiddleware, (req: Request, res: Response) => {
-  const { id, data } = req.body
+  const { id, data } = req.body ?? {}
 
   if (!id || typeof id !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid id' })
@@ -245,7 +245,7 @@ router.get('/blob/:filename', authMiddleware, (req: Request, res: Response) => {
 router.get('/:id', authMiddleware, (req: Request, res: Response) => {
   const { id } = req.params
 
-  if (!isSafeIconId(id)) {
+  if (typeof id !== 'string' || !isSafeIconId(id)) {
     return res.status(400).json({ error: 'Invalid icon id format' })
   }
 
@@ -271,7 +271,7 @@ router.get('/:id', authMiddleware, (req: Request, res: Response) => {
 router.delete('/:id', authMiddleware, (req: Request, res: Response) => {
   const { id } = req.params
 
-  if (!isSafeIconId(id)) {
+  if (typeof id !== 'string' || !isSafeIconId(id)) {
     return res.status(400).json({ error: 'Invalid icon id format' })
   }
 

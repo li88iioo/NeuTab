@@ -148,8 +148,10 @@ docker run -d -p 3001:3001 \
 ## 开发
 
 ### 环境要求
-- Node.js 20+
-- pnpm 10.28.2（由 `packageManager` 锁定）
+- Node.js 22（≥22.13）、24 或 26+（推荐 Node.js 24 LTS）
+- pnpm 12.15.0（由 `packageManager` 锁定）
+
+TypeScript 固定为 6.0.3：当前 `typescript-eslint` 支持范围为 `<6.1.0`，待其支持 TypeScript 7 后再同步升级。
 
 ### 项目结构
 
@@ -205,7 +207,7 @@ pnpm -w rebuild better-sqlite3
 如果切换过 Node 版本后 Web 后端启动时报 `NODE_MODULE_VERSION` 不匹配，请在当前 Node 版本下重编译：
 
 ```bash
-npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
+pnpm --filter neutab-web-server rebuild better-sqlite3
 ```
 
 ---

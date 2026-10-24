@@ -17,7 +17,6 @@ import { getTranslations, type Language } from "@neutab/shared/utils/i18n"
 import { ensureInternalUrlProbed, peekResolvedInternalUrl } from "@neutab/shared/utils/autoUrlSelect"
 import { navigateCurrentTab } from "@neutab/shared/utils/navigation"
 import { isAllowedNavigationUrl, isHttpUrl, sanitizeInternalUrl, sanitizeUrl } from "@neutab/shared/utils/validation"
-import { logger } from "@neutab/shared/utils/logger"
 import "./QuickLaunch.css"
 
 const arrayMove = <T,>(arr: T[], from: number, to: number): T[] => {
@@ -127,7 +126,10 @@ export default function QuickLaunch({
    * 组合最终显示的内部分组列表
    * @description 合并持久化的存储分组和动态生成的“常去”、“最近”分组。
    */
-  const safeStorageGroups = (!isGroupsLoading && (!groups || groups.length === 0)) ? DEFAULT_GROUPS : (groups || []);
+  const safeStorageGroups = useMemo(
+    () => (!isGroupsLoading && (!groups || groups.length === 0)) ? DEFAULT_GROUPS : (groups || []),
+    [groups, isGroupsLoading]
+  )
 
   const displayGroups = useMemo(() => {
     const list = [...safeStorageGroups]

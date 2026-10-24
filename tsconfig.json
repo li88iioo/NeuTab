@@ -7,6 +7,7 @@
       "DOM.Iterable"
     ],
     "jsx": "react-jsx",
+    "types": ["node", "chrome"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,

@@ -86,17 +86,16 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
     !builtInIconUrl &&
     !!baseFaviconUrl
 
-  useEffect(() => {
+  // 来源变化时同步调整加载状态，React 会在提交前重试当前组件，避免旧图标闪现。
+  // 重试产生的 faviconRevision 不属于来源，不能触发这次重置。
+  const sourceInputs = [name, url, customIcon, localIcon, builtInIconUrl, baseFaviconUrl, effectiveStyle, hasLocalIcon]
+  const [previousSourceInputs, setPreviousSourceInputs] = useState(sourceInputs)
+  if (sourceInputs.some((value, index) => value !== previousSourceInputs[index])) {
+    setPreviousSourceInputs(sourceInputs)
     setFaviconRevision(0)
     setFaviconRetryCount(0)
-  }, [baseFaviconUrl, localIcon, customIcon, builtInIconUrl, effectiveStyle, hasLocalIcon])
-
-  // 当输入变化（URL/图标来源变化）时，重置回退索引。
-  // 注意依赖 baseFaviconUrl 而非 faviconUrl:重试只改 revision(faviconUrl 变化),
-  // 若依赖 faviconUrl 会与重试 effect 互相触发形成反馈循环。
-  useEffect(() => {
     setSrcIndex(0)
-  }, [name, url, customIcon, localIcon, builtInIconUrl, baseFaviconUrl, effectiveStyle])
+  }
 
   useEffect(() => {
     if (!shouldUseFaviconAutoRetry) return
@@ -156,6 +155,7 @@ const SmartIcon = ({ name, url, customIcon, fallbackColor, iconStyle, customText
     return (
       <div className="favicon-wrapper">
         <img
+          key={currentSrc}
           src={currentSrc}
           alt={name}
           className="remote-favicon"

@@ -28,16 +28,19 @@ const LayoutSection = ({ t }: LayoutSectionProps) => {
   const [iconBorderRadiusDraft, setIconBorderRadiusDraft] = useState(iconBorderRadius)
   const [cardSizeDraft, setCardSizeDraft] = useState(cardSize)
 
-  /** Storage 值变化(异步加载完成/云同步覆盖)时回填 Draft */
-  useEffect(() => {
-    if (isStorageLoading) return
+  const storedLayout = [contentMaxWidth, contentPaddingX, contentPaddingTop, contentPaddingBottom, iconBorderRadius, cardSize, isStorageLoading] as const
+  const [previousLayout, setPreviousLayout] = useState(storedLayout)
+
+  // 在存储快照变化时同步草稿，避免先提交过期预览再由 Effect 回填。
+  if (!isStorageLoading && storedLayout.some((value, index) => !Object.is(value, previousLayout[index]))) {
+    setPreviousLayout(storedLayout)
     setContentMaxWidthDraft(contentMaxWidth)
     setContentPaddingXDraft(Math.max(LAYOUT_LIMITS.paddingX.min, contentPaddingX))
     setContentPaddingTopDraft(contentPaddingTop)
     setContentPaddingBottomDraft(contentPaddingBottom)
     setIconBorderRadiusDraft(iconBorderRadius)
     setCardSizeDraft(cardSize)
-  }, [contentMaxWidth, contentPaddingX, contentPaddingTop, contentPaddingBottom, iconBorderRadius, cardSize, isStorageLoading])
+  }
 
   // Normalize legacy/invalid padding values into the supported range.
   useEffect(() => {
@@ -45,7 +48,6 @@ const LayoutSection = ({ t }: LayoutSectionProps) => {
     if (typeof contentPaddingX !== "number") return
     if (contentPaddingX >= LAYOUT_LIMITS.paddingX.min) return
     const next = LAYOUT_LIMITS.paddingX.min
-    setContentPaddingXDraft(next)
     commitLayoutCache("layout_contentPaddingX", next)
     void setContentPaddingX(next)
   }, [contentPaddingX, setContentPaddingX, isStorageLoading])

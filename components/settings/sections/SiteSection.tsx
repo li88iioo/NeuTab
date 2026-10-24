@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiGlobe, FiImage, FiType } from "react-icons/fi"
 import { DEFAULT_SETTINGS } from "@neutab/shared/utils/settings"
@@ -11,21 +11,23 @@ interface SiteSectionProps {
 
 /** 站点分区:标签页标题与 Favicon 定制 */
 const SiteSection = ({ t }: SiteSectionProps) => {
-  const [siteTitle, setSiteTitle, { isLoading: titleLoading }] = useStorage("siteTitle", DEFAULT_SETTINGS.siteTitle)
-  const [siteFavicon, setSiteFavicon, { isLoading: faviconLoading }] = useStorage("siteFavicon", DEFAULT_SETTINGS.siteFavicon)
+  const [siteTitle, setSiteTitle] = useStorage("siteTitle", DEFAULT_SETTINGS.siteTitle)
+  const [siteFavicon, setSiteFavicon] = useStorage("siteFavicon", DEFAULT_SETTINGS.siteFavicon)
 
-  const [siteTitleDraft, setSiteTitleDraft] = useState(siteTitle ?? "")
-  const [siteFaviconDraft, setSiteFaviconDraft] = useState(siteFavicon ?? "")
+  const [titleDraft, setSiteTitleDraft] = useState<string>()
+  const [faviconDraft, setSiteFaviconDraft] = useState<string>()
+  const siteTitleDraft = titleDraft ?? siteTitle ?? ""
+  const siteFaviconDraft = faviconDraft ?? siteFavicon ?? ""
 
-  useEffect(() => {
-    if (titleLoading) return
-    setSiteTitleDraft(siteTitle ?? "")
-  }, [siteTitle, titleLoading])
+  const commitSiteTitle = async () => {
+    await setSiteTitle(siteTitleDraft)
+    setSiteTitleDraft((current) => current === siteTitleDraft ? undefined : current)
+  }
 
-  useEffect(() => {
-    if (faviconLoading) return
-    setSiteFaviconDraft(siteFavicon ?? "")
-  }, [siteFavicon, faviconLoading])
+  const commitSiteFavicon = async () => {
+    await setSiteFavicon(siteFaviconDraft)
+    setSiteFaviconDraft((current) => current === siteFaviconDraft ? undefined : current)
+  }
 
   return (
     <section className="settings-section" key="site">
@@ -61,8 +63,8 @@ const SiteSection = ({ t }: SiteSectionProps) => {
             placeholder={t.pageTitlePlaceholder}
             value={siteTitleDraft}
             onChange={(e) => setSiteTitleDraft(e.target.value)}
-            onBlur={() => setSiteTitle(siteTitleDraft)}
-            onKeyDown={(event) => handleCommitOnEnter(event, () => setSiteTitle(siteTitleDraft))}
+            onBlur={commitSiteTitle}
+            onKeyDown={(event) => handleCommitOnEnter(event, commitSiteTitle)}
           />
         </div>
 
@@ -77,8 +79,8 @@ const SiteSection = ({ t }: SiteSectionProps) => {
             placeholder={t.faviconUrlPlaceholder}
             value={siteFaviconDraft}
             onChange={(e) => setSiteFaviconDraft(e.target.value)}
-            onBlur={() => setSiteFavicon(siteFaviconDraft)}
-            onKeyDown={(event) => handleCommitOnEnter(event, () => setSiteFavicon(siteFaviconDraft))}
+            onBlur={commitSiteFavicon}
+            onKeyDown={(event) => handleCommitOnEnter(event, commitSiteFavicon)}
           />
         </div>
       </div>

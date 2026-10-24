@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiCheck, FiChevronDown, FiChevronUp, FiPlus, FiTrash2, FiX } from "react-icons/fi"
 import type { QuickLaunchGroup } from "@neutab/shared/types/quickLaunch"
@@ -24,39 +24,6 @@ const GroupsSection = ({ t }: GroupsSectionProps) => {
 
   const safeGroups = groups?.length ? groups : DEFAULT_GROUPS
 
-  /** 同步分组名称预览状态 */
-  useEffect(() => {
-    setGroupNameDrafts((prev) => {
-      const next = { ...prev }
-      const ids = new Set(safeGroups.map((group) => group.id))
-
-      safeGroups.forEach((group) => {
-        const currentDraft = prev[group.id]
-        const actualValue = group.name
-
-        if (currentDraft === undefined) {
-          // 首次初始化
-          next[group.id] = actualValue
-        } else if (currentDraft !== actualValue) {
-          // draft 与实际值不同:用户编辑中不覆盖;仅 storage 加载完成(Default → 真实名)时同步
-          const isStorageLoaded = currentDraft === "Default" && actualValue !== "Default"
-          if (isStorageLoaded) {
-            next[group.id] = actualValue
-          }
-        }
-      })
-
-      // 清理已删除分组的 draft
-      Object.keys(next).forEach((id) => {
-        if (!ids.has(id)) {
-          delete next[id]
-        }
-      })
-
-      return next
-    })
-  }, [safeGroups])
-
   /** 新增分组 */
   const addGroup = () => {
     const name = newGroupName === "" ? `${t.groupPrefix} ${safeGroups.length + 1}` : newGroupName
@@ -74,11 +41,18 @@ const GroupsSection = ({ t }: GroupsSectionProps) => {
   }
 
   /** 提交分组名称更改(允许空白名) */
-  const commitGroupName = (groupId: string, name: string) => {
+  const commitGroupName = async (groupId: string, name: string) => {
     setGroupNameDrafts((prev) => ({ ...prev, [groupId]: name }))
-    setGroups((prevGroups) => {
+    await setGroups((prevGroups) => {
       const current = prevGroups?.length ? prevGroups : DEFAULT_GROUPS
       return current.map((group) => (group.id === groupId ? { ...group, name } : group))
+    })
+    // 保存完成后直接展示存储值；保留保存期间继续输入的新草稿。
+    setGroupNameDrafts((prev) => {
+      if (prev[groupId] !== name) return prev
+      const next = { ...prev }
+      delete next[groupId]
+      return next
     })
   }
 
@@ -93,6 +67,11 @@ const GroupsSection = ({ t }: GroupsSectionProps) => {
 
   const executeDeleteGroup = (groupId: string) => {
     setGroups(safeGroups.filter((g) => g.id !== groupId))
+    setGroupNameDrafts((prev) => {
+      const next = { ...prev }
+      delete next[groupId]
+      return next
+    })
     setGroupToDelete(null)
   }
 

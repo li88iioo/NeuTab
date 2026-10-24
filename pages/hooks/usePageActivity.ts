@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react"
 import { beginPerfInteracting } from "@neutab/shared/utils/perfLod"
 
 interface PageActivityOptions {
@@ -29,8 +29,7 @@ export const usePageActivity = ({ settingsFabRef, backToTopRef, onToggleSettings
   const scrollPerfReleaseRef = useRef<(() => void) | null>(null)
   const scrollPerfStartRef = useRef(0)
   const scrollPerfReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const onToggleSettingsRef = useRef(onToggleSettings)
-  onToggleSettingsRef.current = onToggleSettings
+  const toggleSettings = useEffectEvent(onToggleSettings)
 
   useEffect(() => {
     /** 辅助函数:当按钮即将隐藏时移除焦点,防止 aria-hidden 与 focus 产生冲突 */
@@ -60,7 +59,7 @@ export const usePageActivity = ({ settingsFabRef, backToTopRef, onToggleSettings
       scheduleActivity()
       // 快捷键 's' 打开设置面板 (排除非输入框状态)
       if (e.key.toLowerCase() === 's' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
-        onToggleSettingsRef.current()
+        toggleSettings()
       }
     }
 
@@ -169,9 +168,7 @@ export const usePageActivity = ({ settingsFabRef, backToTopRef, onToggleSettings
       scrollPerfReleaseRef.current = null
       scrollPerfReleaseTimerRef.current = null
     }
-    // settingsFabRef/backToTopRef 是稳定的 ref 对象;onToggleSettings 经 ref 转发
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [settingsFabRef, backToTopRef])
 
   /** 执行回顶部 */
   const handleBackToTop = () => {

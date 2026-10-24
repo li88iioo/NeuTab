@@ -26,7 +26,7 @@ const readCssVarPx = (name: string): number | null => {
 }
 
 export const useQuickLaunchLayout = (
-  containerRef: RefObject<HTMLDivElement>,
+  containerRef: RefObject<HTMLDivElement | null>,
   cardSize: number | undefined
 ) => {
   const [containerWidth, setContainerWidth] = useState(0)

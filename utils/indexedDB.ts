@@ -217,7 +217,7 @@ export async function putIcon(iconId: string, base64: string): Promise<void> {
         if (usage / quota > 0.9) {
           console.warn(`[IndexedDB] Storage quota nearly full: ${(usage / quota * 100).toFixed(1)}% (${(usage / 1024 / 1024).toFixed(2)}MB / ${(quota / 1024 / 1024).toFixed(2)}MB)`)
         }
-      } catch (e) {
+      } catch {
         // 配额检测失败不阻塞流程
       }
     }

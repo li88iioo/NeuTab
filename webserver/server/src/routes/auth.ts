@@ -16,7 +16,7 @@ const readCookie = (req: Request, name: string): string | undefined => {
 }
 
 router.post('/login', (req: Request, res: Response) => {
-  const { authCode } = req.body
+  const { authCode } = req.body ?? {}
 
   if (!AUTH_CODE) {
     return res.status(500).json({ error: 'AUTH_CODE not configured on server', code: 'AUTH_CODE_NOT_CONFIGURED' })

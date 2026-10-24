@@ -159,7 +159,7 @@ const QuickLaunchGroupList = ({
     const cleanup = () => {
       if (drag.raf != null) cancelAnimationFrame(drag.raf)
 
-      for (const [id, el] of drag.elementsById) {
+      for (const el of drag.elementsById.values()) {
         el.style.transform = ""
         el.style.transition = ""
         el.style.willChange = ""

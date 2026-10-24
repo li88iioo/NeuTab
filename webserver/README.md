@@ -86,7 +86,7 @@ pnpm -w rebuild better-sqlite3
 如果切换过 Node 版本后仍报 `NODE_MODULE_VERSION` 不匹配，请按当前 Node 版本重编译：
 
 ```bash
-npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
+pnpm --filter neutab-web-server rebuild better-sqlite3
 ```
 
 ---
@@ -290,7 +290,7 @@ pnpm -w rebuild better-sqlite3
 切换 Node 版本后如仍失败：
 
 ```bash
-npm run build-release --prefix node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3
+pnpm --filter neutab-web-server rebuild better-sqlite3
 ```
 
 ### 登录返回 429

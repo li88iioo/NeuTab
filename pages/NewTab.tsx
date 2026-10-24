@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowUp, FiSettings } from "react-icons/fi"
 import { ErrorBoundary, Header } from "@neutab/ui"
@@ -85,6 +85,7 @@ function NewTab() {
 
   // -- 本地 UI 状态 --
   const [showSettings, setShowSettings] = useState(false)
+  const closeSettings = useCallback(() => setShowSettings(false), [])
   const settingsFabRef = useRef<HTMLButtonElement | null>(null)
   const backToTopRef = useRef<HTMLButtonElement | null>(null)
 
@@ -145,7 +146,7 @@ function NewTab() {
         ref={settingsFabRef}
         tabIndex={shouldHideSettingsFab ? -1 : 0}
         aria-hidden={shouldHideSettingsFab ? "true" : undefined}
-        inert={shouldHideSettingsFab ? "" : undefined}
+        inert={shouldHideSettingsFab}
         aria-label={t.openSettings}>
         <FiSettings size={18} />
       </button>
@@ -158,7 +159,7 @@ function NewTab() {
         ref={backToTopRef}
         tabIndex={isBackToTopVisible ? 0 : -1}
         aria-hidden={!isBackToTopVisible ? "true" : undefined}
-        inert={!isBackToTopVisible ? "" : undefined}
+        inert={!isBackToTopVisible}
         aria-label={t.backToTop}>
         <FiArrowUp size={18} />
       </button>
@@ -166,7 +167,7 @@ function NewTab() {
       {/* 设置面板 */}
       {showSettings && (
         <Suspense fallback={null}>
-          <SettingsPanel onClose={() => setShowSettings(false)} />
+          <SettingsPanel onClose={closeSettings} />
         </Suspense>
       )}
     </ErrorBoundary>

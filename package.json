@@ -1,8 +1,8 @@
 {
   "name": "neu-tab",
   "displayName": "NeuTab",
-  "version": "1.0.6",
-  "packageManager": "pnpm@10.28.2",
+  "version": "1.0.7",
+  "packageManager": "pnpm@12.15.0",
   "description": "Simple neumorphic browser homepage with search and quick launch",
   "author": "NeuTab Contributors",
   "scripts": {
@@ -15,43 +15,31 @@
     "package": "pnpm build && plasmo package && node ./scripts/patch-build-html-paths.mjs && node ./scripts/sync-build-dev.mjs",
     "package:firefox": "pnpm build:firefox && node node_modules/plasmo/bin/index.mjs package --target=firefox-mv3 && node ./scripts/patch-firefox-build.mjs && node ./scripts/patch-build-html-paths.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "test": "vitest run"
   },
   "dependencies": {
     "@neutab/shared": "workspace:*",
     "@neutab/ui": "workspace:*",
-    "@plasmohq/storage": "^1.9.0",
+    "@plasmohq/storage": "^1.15.0",
     "lz-string": "^1.5.0",
-    "plasmo": "0.88.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-icons": "^5.0.1"
+    "plasmo": "0.90.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-icons": "^5.7.0"
   },
   "devDependencies": {
     "@plasmohq/parcel-resolver": "^0.14.2",
-    "@types/chrome": "0.0.258",
-    "@types/node": "20.11.5",
-    "@types/react": "18.2.48",
-    "@types/react-dom": "18.2.18",
-    "eslint": "^10.8.0",
+    "@types/chrome": "0.3.6",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "typescript": "5.3.3",
-    "typescript-eslint": "^8.65.0",
-    "vite": "^7.3.6",
-    "vitest": "^4.1.10"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "better-sqlite3",
-      "esbuild",
-      "less",
-      "lmdb",
-      "msgpackr-extract",
-      "sharp"
-    ]
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "manifest": {
     "name": "__MSG_extensionName__",
@@ -64,6 +52,13 @@
       "bookmarks",
       "topSites",
       "history"
+    ]
+  },
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0",
+    "browsers": [
+      "last 1 Chrome version",
+      "last 1 Firefox version"
     ]
   }
 }

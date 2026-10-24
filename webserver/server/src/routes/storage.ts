@@ -44,7 +44,7 @@ function valueWithinLimit(value: unknown): boolean {
 
 // 批量获取 keys
 router.post('/getMany', (req: Request, res: Response) => {
-  const { keys } = req.body as { keys?: unknown }
+  const { keys } = (req.body ?? {}) as { keys?: unknown }
 
   if (!Array.isArray(keys)) {
     return res.status(400).json({ error: 'Missing keys' })
@@ -74,7 +74,7 @@ router.post('/getMany', (req: Request, res: Response) => {
 // 获取单个 key
 router.get('/get/:key', (req: Request, res: Response) => {
   const { key } = req.params
-  if (!isStorageKeyName(key)) {
+  if (typeof key !== 'string' || !isStorageKeyName(key)) {
     return res.status(400).json({ error: 'Invalid key' })
   }
 
@@ -91,7 +91,7 @@ router.get('/all', (_req: Request, res: Response) => {
 
 // 设置单个 key
 router.post('/set', (req: Request, res: Response) => {
-  const { key, value } = req.body
+  const { key, value } = req.body ?? {}
   if (!key || typeof key !== 'string') {
     return res.status(400).json({ error: 'Missing key' })
   }
@@ -116,7 +116,7 @@ router.post('/set', (req: Request, res: Response) => {
 
 // 批量设置
 router.post('/setMany', (req: Request, res: Response) => {
-  const { items } = req.body
+  const { items } = req.body ?? {}
   if (!items || typeof items !== 'object' || Array.isArray(items)) {
     return res.status(400).json({ error: 'Missing items' })
   }
@@ -151,7 +151,7 @@ router.post('/setMany', (req: Request, res: Response) => {
 
 // 删除 key
 router.post('/remove', (req: Request, res: Response) => {
-  const { key } = req.body
+  const { key } = req.body ?? {}
   if (!key || typeof key !== 'string') {
     return res.status(400).json({ error: 'Missing key' })
   }

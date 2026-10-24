@@ -3,7 +3,7 @@
 # =============================================================================
 # Stage 1: Builder - Build everything
 # =============================================================================
-FROM node:20-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 
 ENV CI=true
 ENV PNPM_DISABLE_SELF_UPDATE_CHECK=1
@@ -15,7 +15,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN corepack enable && corepack prepare pnpm@12.15.0 --activate
 
 # Install workspace deps (copy package manifests first for better layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -44,26 +44,28 @@ RUN pnpm --filter neutab-web-server build
 # =============================================================================
 # Stage 2: Production deps - Install server-only production deps with pnpm
 # =============================================================================
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /deps
 
 # better-sqlite3 needs build tools
 RUN apk add --no-cache python3 make g++
 
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN corepack enable && corepack prepare pnpm@12.15.0 --activate
 
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/webserver/server/package.json ./webserver/server/package.json
+# 在服务端目录复用依赖规则，保持锁文件校验一致且只安装服务端依赖。
+COPY --from=builder /app/pnpm-workspace.yaml ./webserver/server/pnpm-workspace.yaml
 
 WORKDIR /deps/webserver/server
-RUN pnpm install --prod --ignore-workspace --frozen-lockfile --lockfile-dir /deps
+RUN pnpm install --prod --frozen-lockfile --lockfile-dir /deps
 
 # =============================================================================
 # Stage 3: Runtime - Minimal Alpine image
 # =============================================================================
-FROM node:20-alpine
+FROM node:24-alpine
 
 ENV NODE_ENV=production
 ENV PORT=3001

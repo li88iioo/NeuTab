@@ -7,11 +7,11 @@ export default defineConfig({
   resolve: {
     alias: [
       // 支持 ~/... 格式（带斜杠）
-      { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src') + '/$1' },
+      { find: /^~\/(.*)$/, replacement: path.resolve(import.meta.dirname, 'src') + '/$1' },
       // 支持 ~... 格式（不带斜杠）
-      { find: /^~([^/].*)$/, replacement: path.resolve(__dirname, 'src') + '/$1' },
-      { find: '@plasmohq/storage/hook', replacement: path.resolve(__dirname, 'src/shims/storage.ts') },
-      { find: '@plasmohq/storage', replacement: path.resolve(__dirname, 'src/shims/storage.ts') }
+      { find: /^~([^/].*)$/, replacement: path.resolve(import.meta.dirname, 'src') + '/$1' },
+      { find: '@plasmohq/storage/hook', replacement: path.resolve(import.meta.dirname, 'src/shims/storage.ts') },
+      { find: '@plasmohq/storage', replacement: path.resolve(import.meta.dirname, 'src/shims/storage.ts') }
     ]
   },
   server: {

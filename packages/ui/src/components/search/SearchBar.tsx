@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, type JSX } from "react"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 import { FiArrowRight, FiArrowUpRight, FiPlus, FiTrash2, FiSearch, FiGlobe, FiEdit2, FiGrid } from "react-icons/fi"
@@ -213,7 +213,13 @@ const SearchBarInner = () => {
    * 本地状态引擎 ID
    * @description 用于立即响应 UI 操作，避免 useStorage 异步写入导致的感知延迟。
    */
-  const [localEngineId, setLocalEngineId] = useState<string | null>(null)
+  const [engineSelection, setEngineSelection] = useState({
+    storedId: storedEngineId,
+    id: storedEngineId || "google"
+  })
+  if (!isEngineLoading && engineSelection.storedId !== storedEngineId) {
+    setEngineSelection({ storedId: storedEngineId, id: storedEngineId || "google" })
+  }
 
   // 菜单与弹窗可见性控制
   const [showEngineMenu, setShowEngineMenu] = useState(false)
@@ -221,6 +227,42 @@ const SearchBarInner = () => {
   const [showEditEngine, setShowEditEngine] = useState(false)
   const [editingEngine, setEditingEngine] = useState<Engine | null>(null)
   const [urlError, setUrlError] = useState("")
+
+  /** 快捷启动分组数据 */
+  const [groups] = useStorage<QuickLaunchGroup[]>(
+    { key: "quickLaunchGroups", instance: localGroupsStorage },
+    DEFAULT_GROUPS
+  )
+
+  const [bookmarkResults, setBookmarkResults] = useState<{
+    query: string
+    items: SearchResult[]
+  } | null>(null)
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
+  const [previousResultCount, setPreviousResultCount] = useState(0)
+
+  // 应用匹配可从当前输入直接计算，不等待异步书签搜索。
+  const appMatches = useMemo<SearchResult[]>(() => {
+    if (!query.trim()) return []
+    const q = query.toLowerCase()
+    return (groups ?? []).flatMap((group) => (group.apps ?? [])
+      .filter((app) => app.name.toLowerCase().includes(q)
+        || app.url.toLowerCase().includes(q)
+        || (app.internalUrl ?? "").toLowerCase().includes(q))
+      .map((app) => ({ type: "app" as const, data: app })))
+  }, [query, groups])
+
+  const searchResults = useMemo(() => {
+    const bookmarks = bookmarkResults?.query === query ? bookmarkResults.items : []
+    return [...appMatches, ...bookmarks].slice(0, 50)
+  }, [appMatches, bookmarkResults, query])
+
+  // 结果数量改变时在提交前重置选择，避免旧索引参与当前结果渲染。
+  if (previousResultCount !== searchResults.length) {
+    setPreviousResultCount(searchResults.length)
+    setActiveSuggestionIndex(-1)
+  }
 
   const containerRef = useRef<HTMLFormElement>(null)
   const ENGINE_MENU_ID = "engine-menu"
@@ -283,97 +325,50 @@ const SearchBarInner = () => {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [showEngineMenu])
 
-  /** 快捷启动分组数据 */
-  const [groups] = useStorage<QuickLaunchGroup[]>(
-    { key: "quickLaunchGroups", instance: localGroupsStorage },
-    DEFAULT_GROUPS
-  )
-
-  /** 聚合后的搜索结果列表 */
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
-  /** 追踪搜索请求，用于丢弃过时的异步书签搜索结果 */
-  const searchRequestRef = useRef(0)
-
-  /**
-   * Effect: 搜索过滤逻辑
-   * @description 当 query 或分组数据变化时，同时过滤“快捷启动”和“浏览器书签”。
-   * 书签搜索包含 150ms 防抖处理。
-   */
+  /** 书签搜索保留 150ms 防抖，并在输入变化或卸载时丢弃过时响应。 */
   useEffect(() => {
-    if (!query.trim()) {
-      setSearchResults([])
-      setSuggestionsOpen(false)
-      setActiveSuggestionIndex(-1)
-      return
-    }
-
-    const q = query.toLowerCase()
-    // 用户开始输入时默认展开建议
-    setSuggestionsOpen(true)
-
-    // 1. 过滤快捷启动应用
-    const appMatches: SearchResult[] = []
-    if (groups) {
-      groups.forEach(g => {
-        if (!g.apps) return
-        g.apps.forEach(app => {
-          const internal = (app.internalUrl ?? "").toLowerCase()
-          if (app.name.toLowerCase().includes(q) || app.url.toLowerCase().includes(q) || internal.includes(q)) {
-            appMatches.push({ type: 'app', data: app })
-          }
-        })
-      })
-    }
-
-    // 2. 调用 Chrome API 过滤浏览器书签 (支持防抖)
+    if (!query.trim()) return
     const chromeApi = getChromeApi()
-    if (chromeApi?.bookmarks?.search) {
-      const requestId = ++searchRequestRef.current
-      const timer = setTimeout(() => {
-        const runSearch = () => {
-          chromeApi.bookmarks!.search(query, (results: ChromeBookmarkNode[]) => {
-            // 仅处理最新的请求结果，防止竞态条件
-            if (searchRequestRef.current !== requestId) return
-            if (chromeApi.runtime?.lastError) {
-              logger.warn("[bookmarks] Failed:", chromeApi.runtime.lastError.message)
-              setSearchResults(appMatches)
-              return
-            }
-            const bookmarkMatches: SearchResult[] = results
-              // Filter out bookmarklets / non-web schemes (e.g. `javascript:`).
-              .filter((b) => b.url && isHttpUrl(b.url))
-              .slice(0, 50)
-              .map((b) => ({ type: "bookmark", data: { id: String(b.id), title: String(b.title ?? ""), url: String(b.url || "") } }))
+    if (!chromeApi?.bookmarks?.search) return
 
-            // 合并：常用 App 在前，书签在后
-            setSearchResults([...appMatches, ...bookmarkMatches].slice(0, 50))
-          })
+    let cancelled = false
+    const timer = setTimeout(() => {
+      const runWithPermission = async () => {
+        const granted = await ensureChromePermission(chromeApi, "bookmarks")
+        if (cancelled) return
+        if (!granted) {
+          setBookmarkResults({ query, items: [] })
+          return
         }
-
-        const runWithPermission = async () => {
-          const granted = await ensureChromePermission(chromeApi, "bookmarks")
-          if (searchRequestRef.current !== requestId) return
-          if (!granted) {
-            setSearchResults(appMatches)
+        chromeApi.bookmarks!.search(query, (results: ChromeBookmarkNode[]) => {
+          if (cancelled) return
+          if (chromeApi.runtime?.lastError) {
+            logger.warn("[bookmarks] Failed:", chromeApi.runtime.lastError.message)
+            setBookmarkResults({ query, items: [] })
             return
           }
-          runSearch()
-        }
-        void runWithPermission()
-      }, 150)
-      return () => clearTimeout(timer)
-    } else {
-      // 环境不支持书签 API 时仅显示 App 匹配项
-      setSearchResults(appMatches)
-    }
-  }, [query, groups])
+          const items: SearchResult[] = results
+            .filter((bookmark) => bookmark.url && isHttpUrl(bookmark.url))
+            .slice(0, 50)
+            .map((bookmark) => ({
+              type: "bookmark",
+              data: {
+                id: String(bookmark.id),
+                title: String(bookmark.title ?? ""),
+                url: String(bookmark.url || "")
+              }
+            }))
+          setBookmarkResults({ query, items })
+        })
+      }
+      void runWithPermission()
+    }, 150)
 
-  // 当结果集合变化时，重置高亮项，避免“高亮索引越界”
-  useEffect(() => {
-    setActiveSuggestionIndex(-1)
-  }, [query, searchResults.length])
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query])
 
   // 高亮项变化时，尽量保持其可见（键盘上下选择不会“滚到看不见”）
   useEffect(() => {
@@ -382,37 +377,25 @@ const SearchBarInner = () => {
     el?.scrollIntoView?.({ block: "nearest" })
   }, [activeSuggestionIndex])
 
-  /**
-   * Effect: 状态同步
-   * @description 当 Storage 值加载完成时，将其同步到本地瞬时状态。
-   */
-  useEffect(() => {
-    if (isEngineLoading) return
-    setLocalEngineId(storedEngineId || "google")
-  }, [storedEngineId, isEngineLoading])
-
   // ---------------------------------------------------------------------------
   // 核心逻辑与计算值
   // ---------------------------------------------------------------------------
 
   /** 优先使用本地瞬时 ID，增强交互顺滑度 */
-  const currentEngineId = localEngineId ?? storedEngineId ?? "google"
+  const currentEngineId = engineSelection.id
   const openInNewWindowEnabled = !!openInNewWindow
 
   /** 防御性检查：确保引擎数组有效，否则回退到默认 */
   const safeEngines = engines?.length > 0 ? engines : DEFAULT_ENGINES
   const currentEngine = safeEngines.find((e) => e.id === currentEngineId) || safeEngines[0]
   const isLoading = isEnginesLoading || isEngineLoading
-  const hasResolvedInitialLoadingRef = useRef(false)
+  const [hasResolvedInitialLoading, setHasResolvedInitialLoading] = useState(!isLoading)
+  if (!isLoading && !hasResolvedInitialLoading) {
+    setHasResolvedInitialLoading(true)
+  }
 
-  useEffect(() => {
-    if (!isLoading) {
-      hasResolvedInitialLoadingRef.current = true
-    }
-  }, [isLoading])
-
-  // 仅在“首屏尚未就绪”时显示占位条，避免运行中偶发 storage loading 造成白条闪烁。
-  const showInitialPlaceholder = isLoading && !hasResolvedInitialLoadingRef.current
+  // 首次就绪后保留搜索框，避免后续 storage loading 重新显示占位。
+  const showInitialPlaceholder = isLoading && !hasResolvedInitialLoading
 
   /** 执行搜索跳转 */
   const handleSearch = (e: React.FormEvent) => {
@@ -533,7 +516,7 @@ const SearchBarInner = () => {
 
   /** 切换当前搜索引擎 */
   const switchEngine = (engine: Engine) => {
-    setLocalEngineId(engine.id)
+    setEngineSelection({ storedId: storedEngineId, id: engine.id })
     setStoredEngineId(engine.id)
     setShowEngineMenu(false)
   }
@@ -560,7 +543,7 @@ const SearchBarInner = () => {
     setEngines(updated.length > 0 ? updated : DEFAULT_ENGINES)
     // 如果删除的是当前正在使用的，则切换到第一个
     if (currentEngineId === engineId && updated.length > 0) {
-      setLocalEngineId(updated[0].id)
+      setEngineSelection({ storedId: storedEngineId, id: updated[0].id })
       setStoredEngineId(updated[0].id)
     }
   }
@@ -692,7 +675,10 @@ const SearchBarInner = () => {
           value={query}
           onChange={(e) => {
             pulsePerfInteracting()
-            setQuery(e.target.value)
+            const value = e.target.value
+            setQuery(value)
+            setSuggestionsOpen(!!value.trim())
+            setActiveSuggestionIndex(-1)
           }}
           onKeyDown={handleInputKeyDown}
           onFocus={() => {

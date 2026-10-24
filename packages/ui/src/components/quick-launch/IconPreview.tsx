@@ -82,9 +82,13 @@ const IconPreview = ({
         return [localIcon, customIcon, builtInIconUrl, debouncedFaviconUrl].filter(Boolean) as string[]
     }, [localIcon, customIcon, builtInIconUrl, debouncedFaviconUrl])
 
-    useEffect(() => {
+    // 输入变化时在当前渲染内重置回退状态，避免先提交上一来源的图标。
+    const sourceInputs = [name, url, customIcon, localIcon, builtInIconUrl, debouncedFaviconUrl, iconStyle]
+    const [previousSourceInputs, setPreviousSourceInputs] = useState(sourceInputs)
+    if (sourceInputs.some((value, index) => value !== previousSourceInputs[index])) {
+        setPreviousSourceInputs(sourceInputs)
         setSrcIndex(0)
-    }, [name, url, customIcon, localIcon, builtInIconUrl, debouncedFaviconUrl, iconStyle])
+    }
 
     const currentSrc = candidates[srcIndex]
 
@@ -109,6 +113,7 @@ const IconPreview = ({
         return (
             <div className={wrapperClass}>
                 <img
+                    key={currentSrc}
                     src={currentSrc}
                     alt={name}
                     className="preview-image"
